@@ -1,0 +1,410 @@
+import express, { Router } from 'express';
+import { body } from 'express-validator';
+import {
+  getNotifications,
+  getMyNotifications,
+  getNotification,
+  createNotification,
+  updateNotification,
+  deleteNotification,
+  markAsRead
+} from '../controllers/notificationController';
+
+import { protect, authorize } from '../middleware/auth';
+
+const router: Router = express.Router();
+
+// Apply protect middleware to all routes
+router.use(protect);
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Notification:
+ *       type: object
+ *       required:
+ *         - title
+ *         - message
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Auto-generated notification ID
+ *         title:
+ *           type: string
+ *           description: Title of the notification
+ *         message:
+ *           type: string
+ *           description: Content of the notification
+ *         type:
+ *           type: string
+ *           enum: [info, warning, error, success]
+ *           default: info
+ *           description: Type of notification
+ *         targetUsers:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Array of user IDs who should receive this notification (empty for global)
+ *         isGlobal:
+ *           type: boolean
+ *           default: false
+ *           description: Whether this notification is for all users
+ *         expiresAt:
+ *           type: string
+ *           format: date-time
+ *           description: When this notification expires (default 30 days)
+ *         readBy:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Array of user IDs who have read this notification
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
+ * /api/v1/notifications:
+ *   get:
+ *     summary: Get all notifications (Admin only)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [info, warning, error, success]
+ *       - in: query
+ *         name: isGlobal
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of all notifications
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 count:
+ *                   type: integer
+ *                 pagination:
+ *                   type: object
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Notification'
+ *       401:
+ *         description: Not authorized
+ *       403:
+ *         description: Forbidden - Admin access required
+ */
+router.get('/', authorize('admin'), getNotifications);
+
+/**
+ * @swagger
+ * /api/v1/notifications/my-notifications:
+ *   get:
+ *     summary: Get user's notifications
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [info, warning, error, success]
+ *       - in: query
+ *         name: read
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *         description: List of user's notifications
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 count:
+ *                   type: integer
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Notification'
+ *       401:
+ *         description: Not authorized
+ */
+router.get('/my-notifications', getMyNotifications);
+
+/**
+ * @swagger
+ * /api/v1/notifications/{id}:
+ *   get:
+ *     summary: Get single notification
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Notification'
+ *       401:
+ *         description: Not authorized
+ *       404:
+ *         description: Notification not found
+ */
+router.get('/:id', getNotification);
+
+/**
+ * @swagger
+ * /api/v1/notifications:
+ *   post:
+ *     summary: Create new notification (Admin only)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - message
+ *             properties:
+ *               title:
+ *                 type: string
+ *               message:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *                 enum: [info, warning, error, success]
+ *               targetUsers:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               isGlobal:
+ *                 type: boolean
+ *               expiresAt:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       201:
+ *         description: Notification created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Notification'
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Not authorized
+ *       403:
+ *         description: Forbidden - Admin access required
+ */
+router.post(
+  '/',
+  authorize('admin'),
+  [
+    body('title').not().isEmpty().withMessage('Title is required'),
+    body('message').not().isEmpty().withMessage('Message is required'),
+    body('type')
+      .optional()
+      .isIn(['info', 'warning', 'error', 'success'])
+      .withMessage('Invalid notification type'),
+    body('targetUsers').optional().isArray(),
+    body('isGlobal').optional().isBoolean(),
+    body('expiresAt').optional().isISO8601()
+  ],
+  createNotification
+);
+
+/**
+ * @swagger
+ * /api/v1/notifications/{id}/read:
+ *   put:
+ *     summary: Mark notification as read
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification marked as read
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Notification'
+ *       401:
+ *         description: Not authorized
+ *       404:
+ *         description: Notification not found
+ */
+router.put('/:id/read', markAsRead);
+
+/**
+ * @swagger
+ * /api/v1/notifications/{id}:
+ *   put:
+ *     summary: Update notification (Admin only)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               message:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *                 enum: [info, warning, error, success]
+ *               targetUsers:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               isGlobal:
+ *                 type: boolean
+ *               expiresAt:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Notification updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Notification'
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Not authorized
+ *       403:
+ *         description: Forbidden - Admin access required
+ *       404:
+ *         description: Notification not found
+ */
+router.put(
+  '/:id',
+  authorize('admin'),
+  [
+    body('title').optional(),
+    body('message').optional(),
+    body('type')
+      .optional()
+      .isIn(['info', 'warning', 'error', 'success'])
+      .withMessage('Invalid notification type'),
+    body('targetUsers').optional().isArray(),
+    body('isGlobal').optional().isBoolean(),
+    body('expiresAt').optional().isISO8601()
+  ],
+  updateNotification
+);
+
+/**
+ * @swagger
+ * /api/v1/notifications/{id}:
+ *   delete:
+ *     summary: Delete notification (Admin only)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *       401:
+ *         description: Not authorized
+ *       403:
+ *         description: Forbidden - Admin access required
+ *       404:
+ *         description: Notification not found
+ */
+router.delete('/:id', authorize('admin'), deleteNotification);
+
+export default router; 
