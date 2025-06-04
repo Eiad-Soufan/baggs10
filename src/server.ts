@@ -10,6 +10,7 @@ import userRoutes from './routes/userRoutes';
 import workerRoutes from './routes/workerRoutes';
 import complaintRoutes from './routes/complaintRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import orderRoutes from './routes/orderRoutes';
 import { connectDB } from './config/db';
 
 // Swagger documentation
@@ -22,9 +23,7 @@ import errorHandler from './middleware/error';
 dotenv.config();
 
 // Connect to database
-
 connectDB();
-
 
 // Initialize app
 const app: Express = express();
@@ -53,6 +52,7 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/workers', workerRoutes);
 app.use('/api/v1/complaints', complaintRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/orders', orderRoutes);
 
 // Set up Swagger docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

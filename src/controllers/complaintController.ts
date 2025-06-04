@@ -1,24 +1,45 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
 import Complaint, { IComplaint } from '../models/Complaint';
+import Order from '../models/Order';
 import { successResponse, errorResponse, STATUS_CODES } from '../utils/responseHandler';
 import { Types } from 'mongoose';
 import { IUser } from '../models/User';
+
+// Define complaint status enum
+const ComplaintStatus = {
+  PENDING: 'pending',
+  IN_PROGRESS: 'in_progress',
+  RESOLVED: 'resolved',
+  REJECTED: 'rejected',
+  CLOSED: 'closed',
+} as const;
+
+type ComplaintStatus = (typeof ComplaintStatus)[keyof typeof ComplaintStatus];
 
 // Extend Express Request type to include user
 declare module 'express' {
   interface Request {
     user?: IUser;
+    files?: Express.Multer.File[];
   }
 }
 
 interface ComplaintFilters {
-  status?: string;
+  status?: ComplaintStatus;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  category?: 'service' | 'worker' | 'payment' | 'technical' | 'other';
+  assignedToId?: string;
+  relatedWorkerId?: string;
   sortBy?: string;
   order?: 'asc' | 'desc';
   page?: string;
   limit?: string;
   search?: string;
+  createdAt?: {
+    from: string;
+    to: string;
+  };
 }
 
 interface ComplaintResponse {
@@ -90,12 +111,17 @@ export const getComplaints = async (
 ): Promise<void> => {
   try {
     const { 
-      status, 
+      status,
+      priority,
+      category,
+      assignedToId,
+      relatedWorkerId,
       sortBy = 'createdAt',
       order = 'desc',
       page = '1', 
       limit = '10',
-      search
+      search,
+      createdAt
     } = req.query;
 
     // Build query
@@ -106,10 +132,39 @@ export const getComplaints = async (
       query.status = status;
     }
 
-    // Search in reason field
+    // Priority filter
+    if (priority) {
+      query.priority = priority;
+    }
+
+    // Category filter
+    if (category) {
+      query.category = category;
+    }
+
+    // Assigned to filter
+    if (assignedToId) {
+      query.assignedToId = assignedToId;
+    }
+
+    // Related worker filter
+    if (relatedWorkerId) {
+      query.relatedWorkerId = relatedWorkerId;
+    }
+
+    // Date range filter
+    if (createdAt?.from && createdAt?.to) {
+      query.createdAt = {
+        $gte: new Date(createdAt.from),
+        $lte: new Date(createdAt.to)
+      };
+    }
+
+    // Search in title and description
     if (search) {
       query.$or = [
-        { reason: { $regex: search, $options: 'i' } }
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -121,6 +176,8 @@ export const getComplaints = async (
 
     const complaints = await Complaint.find(query)
       .populate('userId', 'name email')
+      .populate('assignedToId', 'name email')
+      .populate('relatedWorkerId', 'name email')
       .populate('orderId')
       .populate('closedByAdminId', 'name email')
       .populate('responses.responderId', 'name email')
@@ -152,9 +209,11 @@ export const getMyComplaints = async (
 ): Promise<void> => {
   try {
     const complaints = await Complaint.find({ userId: req.user!._id })
+      .populate('assignedToId', 'name email')
+      .populate('relatedWorkerId', 'name email')
+      .populate('orderId')
       .populate('closedByAdminId', 'name email')
       .populate('responses.responderId', 'name email')
-      .populate('orderId')
       .sort('-createdAt');
 
     successResponse(res, STATUS_CODES.OK, 'Your complaints retrieved successfully', complaints);
@@ -164,7 +223,7 @@ export const getMyComplaints = async (
 };
 
 /**
- * @desc    Get single complaint with chat-like interface
+ * @desc    Get single complaint
  * @route   GET /api/v1/complaints/:id
  * @access  Private
  */
@@ -175,11 +234,12 @@ export const getComplaint = async (
 ): Promise<void> => {
   try {
     const complaint = await Complaint.findById(req.params.id)
-      .populate<{ userId: PopulatedUser }>('userId', 'name email role')
+      .populate('userId', 'name email role')
+      .populate('assignedToId', 'name email role')
+      .populate('relatedWorkerId', 'name email role')
       .populate('orderId')
-      .populate<{ closedByAdminId: PopulatedUser }>('closedByAdminId', 'name email role')
-      .populate<{ responses: PopulatedResponse[] }>('responses.responderId', 'name email role')
-      .lean();
+      .populate('closedByAdminId', 'name email role')
+      .populate('responses.responderId', 'name email role');
 
     if (!complaint) {
       errorResponse(res, STATUS_CODES.NOT_FOUND, `Complaint not found with id of ${req.params.id}`);
@@ -187,65 +247,12 @@ export const getComplaint = async (
     }
 
     // Make sure user is complaint owner or admin
-    if (complaint.userId._id.toString() !== req.user!._id.toString() && req.user!.role !== 'admin') {
+    if (complaint.userId.toString() !== req.user!._id.toString() && req.user!.role !== 'admin') {
       errorResponse(res, STATUS_CODES.FORBIDDEN, 'Not authorized to access this complaint');
       return;
     }
 
-    // Format the initial complaint as a message
-    const messages: ChatMessage[] = [
-      {
-        type: 'complaint',
-        message: complaint.reason,
-        sender: {
-          _id: complaint.userId._id,
-          name: complaint.userId.name,
-          email: complaint.userId.email,
-          role: complaint.userId.role
-        },
-        createdAt: complaint.createdAt,
-        status: complaint.status
-      }
-    ];
-
-    // Add responses as messages
-    if (complaint.responses && complaint.responses.length > 0) {
-      const responseMessages = complaint.responses.map(response => ({
-        type: 'response' as const,
-        message: response.message,
-        sender: {
-          _id: response.responderId._id,
-          name: response.responderId.name,
-          email: response.responderId.email,
-          role: response.responderId.role
-        },
-        createdAt: response.createdAt
-      }));
-
-      messages.push(...responseMessages);
-    }
-
-    // Sort messages by createdAt in ascending order (oldest to newest)
-    messages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-
-    // Prepare the response
-    const chatResponse: ChatResponse = {
-      complaintId: complaint._id,
-      orderId: complaint.orderId,
-      status: complaint.status,
-      createdAt: complaint.createdAt,
-      updatedAt: complaint.updatedAt,
-      closedAt: complaint.closedAt || undefined,
-      closedBy: complaint.closedByAdminId ? {
-        _id: complaint.closedByAdminId._id,
-        name: complaint.closedByAdminId.name,
-        email: complaint.closedByAdminId.email,
-        role: complaint.closedByAdminId.role
-      } : undefined,
-      messages
-    };
-
-    successResponse(res, STATUS_CODES.OK, 'Complaint details retrieved successfully', chatResponse);
+    successResponse(res, STATUS_CODES.OK, 'Complaint details retrieved successfully', complaint);
   } catch (err) {
     next(err);
   }
@@ -277,6 +284,11 @@ export const createComplaint = async (
     // Add user to req.body
     req.body.userId = req.user!._id;
 
+    // Handle file uploads
+    if (req.files && Array.isArray(req.files)) {
+      req.body.attachments = req.files.map(file => file.path);
+    }
+
     const complaint = await Complaint.create(req.body);
     successResponse(res, STATUS_CODES.CREATED, 'Complaint created successfully', complaint);
   } catch (err) {
@@ -290,7 +302,7 @@ export const createComplaint = async (
  * @access  Private
  */
 export const addResponse = async (
-  req: Request<{ id: string }, {}, ComplaintResponse>,
+  req: Request<{ id: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -315,7 +327,7 @@ export const addResponse = async (
     }
 
     // Check if complaint is closed
-    if (complaint.status === 'closed') {
+    if (complaint.status === ComplaintStatus.CLOSED) {
       errorResponse(res, STATUS_CODES.BAD_REQUEST, 'Cannot respond to a closed complaint');
       return;
     }
@@ -324,18 +336,20 @@ export const addResponse = async (
       message: req.body.message,
       responderId: req.user!._id,
       responderRole: req.user!.role as 'customer' | 'admin',
-      createdAt: new Date()
-    } as const;
+      attachments: req.files?.map(file => file.path),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
 
     complaint.responses.push(response);
     
-    // If it's an admin response, update the status to 'pending'
-    if (req.user!.role === 'admin' && complaint.status === 'open') {
-      complaint.status = 'pending';
+    // If it's an admin response, update the status to 'in_progress'
+    if (req.user!.role === 'admin' && complaint.status === ComplaintStatus.PENDING) {
+      complaint.status = ComplaintStatus.IN_PROGRESS;
     }
-    // If it's a customer response, update the status to 'open'
-    else if (req.user!.role === 'customer' && complaint.status === 'pending') {
-      complaint.status = 'open';
+    // If it's a customer response, update the status to 'pending'
+    else if (req.user!.role === 'customer' && complaint.status === ComplaintStatus.IN_PROGRESS) {
+      complaint.status = ComplaintStatus.PENDING;
     }
 
     await complaint.save();
@@ -343,6 +357,8 @@ export const addResponse = async (
     // Fetch the updated complaint with populated fields
     const updatedComplaint = await Complaint.findById(req.params.id)
       .populate('userId', 'name email role')
+      .populate('assignedToId', 'name email role')
+      .populate('relatedWorkerId', 'name email role')
       .populate('orderId')
       .populate('closedByAdminId', 'name email role')
       .populate('responses.responderId', 'name email role');
@@ -354,7 +370,7 @@ export const addResponse = async (
 };
 
 /**
- * @desc    Update complaint status (Admin only)
+ * @desc    Update complaint (Admin only)
  * @route   PUT /api/v1/complaints/:id
  * @access  Private/Admin
  */
@@ -371,15 +387,15 @@ export const updateComplaint = async (
       return;
     }
 
-    // Only allow status updates
-    if (!req.body.status) {
-      errorResponse(res, STATUS_CODES.BAD_REQUEST, 'Status is required');
-      return;
+    // Handle file uploads
+    if (req.files && Array.isArray(req.files)) {
+      const newAttachments = req.files.map(file => file.path);
+      req.body.attachments = [...(complaint.attachments || []), ...newAttachments];
     }
 
     // If status is being changed to closed, add closedAt and closedByAdminId
-    if (req.body.status === 'closed') {
-      req.body.closedAt = Date.now();
+    if (req.body.status === ComplaintStatus.CLOSED) {
+      req.body.closedAt = new Date();
       req.body.closedByAdminId = req.user!._id;
     }
 
@@ -390,9 +406,15 @@ export const updateComplaint = async (
         new: true,
         runValidators: true
       }
-    ).populate('responses.responderId', 'name email');
+    )
+    .populate('userId', 'name email role')
+    .populate('assignedToId', 'name email role')
+    .populate('relatedWorkerId', 'name email role')
+    .populate('orderId')
+    .populate('closedByAdminId', 'name email role')
+    .populate('responses.responderId', 'name email role');
 
-    successResponse(res, STATUS_CODES.OK, 'Complaint status updated successfully', complaint);
+    successResponse(res, STATUS_CODES.OK, 'Complaint updated successfully', complaint);
   } catch (err) {
     next(err);
   }
@@ -418,6 +440,162 @@ export const deleteComplaint = async (
 
     await complaint.deleteOne();
     successResponse(res, STATUS_CODES.OK, 'Complaint deleted successfully', null);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * @desc    Add a specific complaint with ID 5
+ * @route   POST /api/v1/complaints/add-five
+ * @access  Private/Admin
+ */
+export const addComplaintFive = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // Create a new complaint with specific ID
+    const complaint = new Complaint({
+      _id: new Types.ObjectId('000000000000000000000005'),
+      title: 'Service Quality Issue',
+      description: 'The service provided did not meet the expected quality standards. The worker arrived late and did not complete all the required tasks.',
+      category: 'service',
+      priority: 'high',
+      status: 'pending',
+      orderId: new Types.ObjectId(), // You'll need to provide a valid order ID
+      userId: req.user!._id,
+      responses: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    await complaint.save();
+
+    successResponse(res, STATUS_CODES.CREATED, 'Complaint #5 created successfully', complaint);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * @desc    Add 5 sample complaints
+ * @route   POST /api/v1/complaints/add-samples
+ * @access  Private/Admin
+ */
+export const addSampleComplaints = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // First create sample orders
+    const sampleOrders = [
+      {
+        userId: req.user!._id,
+        serviceId: new Types.ObjectId(), // You'll need to provide a valid service ID
+        totalAmount: 150.00,
+        scheduledDate: new Date(),
+        status: 'completed',
+        paymentStatus: 'paid'
+      },
+      {
+        userId: req.user!._id,
+        serviceId: new Types.ObjectId(),
+        totalAmount: 200.00,
+        scheduledDate: new Date(),
+        status: 'in_progress',
+        paymentStatus: 'paid'
+      },
+      {
+        userId: req.user!._id,
+        serviceId: new Types.ObjectId(),
+        totalAmount: 175.00,
+        scheduledDate: new Date(),
+        status: 'completed',
+        paymentStatus: 'paid'
+      },
+      {
+        userId: req.user!._id,
+        serviceId: new Types.ObjectId(),
+        totalAmount: 125.00,
+        scheduledDate: new Date(),
+        status: 'completed',
+        paymentStatus: 'paid'
+      },
+      {
+        userId: req.user!._id,
+        serviceId: new Types.ObjectId(),
+        totalAmount: 300.00,
+        scheduledDate: new Date(),
+        status: 'completed',
+        paymentStatus: 'paid'
+      }
+    ];
+
+    const createdOrders = await Order.insertMany(sampleOrders);
+
+    // Now create complaints using the order IDs
+    const sampleComplaints = [
+      {
+        title: 'Late Service Delivery',
+        description: 'The service was delivered 2 hours later than the scheduled time, causing inconvenience.',
+        category: 'service' as const,
+        priority: 'high' as const,
+        status: 'pending' as const,
+        orderId: createdOrders[0]._id,
+        userId: req.user!._id
+      },
+      {
+        title: 'Worker Behavior Issue',
+        description: 'The assigned worker was unprofessional and did not follow proper safety protocols.',
+        category: 'worker' as const,
+        priority: 'urgent' as const,
+        status: 'in_progress' as const,
+        orderId: createdOrders[1]._id,
+        userId: req.user!._id
+      },
+      {
+        title: 'Payment Processing Error',
+        description: 'Double charged for the service. Need immediate refund processing.',
+        category: 'payment' as const,
+        priority: 'high' as const,
+        status: 'pending' as const,
+        orderId: createdOrders[2]._id,
+        userId: req.user!._id
+      },
+      {
+        title: 'App Technical Issue',
+        description: 'Unable to track service status through the mobile app. App keeps crashing.',
+        category: 'technical' as const,
+        priority: 'medium' as const,
+        status: 'pending' as const,
+        orderId: createdOrders[3]._id,
+        userId: req.user!._id
+      },
+      {
+        title: 'General Feedback',
+        description: 'Would like to provide feedback about the overall service experience.',
+        category: 'other' as const,
+        priority: 'low' as const,
+        status: 'pending' as const,
+        orderId: createdOrders[4]._id,
+        userId: req.user!._id
+      }
+    ];
+
+    const createdComplaints = await Complaint.insertMany(sampleComplaints);
+
+    successResponse(
+      res, 
+      STATUS_CODES.CREATED, 
+      '5 sample complaints created successfully', 
+      {
+        orders: createdOrders,
+        complaints: createdComplaints
+      }
+    );
   } catch (err) {
     next(err);
   }

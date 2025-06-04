@@ -7,7 +7,9 @@ import {
   createComplaint,
   updateComplaint,
   deleteComplaint,
-  addResponse
+  addResponse,
+  addComplaintFive,
+  addSampleComplaints
 } from '../controllers/complaintController';
 
 import { protect, authorize } from '../middleware/auth';
@@ -425,5 +427,21 @@ router.put(
  *         description: Complaint not found
  */
 router.delete('/:id', authorize('admin'), deleteComplaint);
+
+/**
+ * @swagger
+ * /api/v1/complaints/add-samples:
+ *   post:
+ *     summary: Add sample complaints (Admin only)
+ *     tags: [Complaints]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sample complaints added successfully
+ *       401:
+ *         description: Not authorized
+ */
+router.post('/add-samples', authorize('admin'), addSampleComplaints);
 
 export default router; 

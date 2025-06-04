@@ -1,9 +1,35 @@
 import express from 'express';
+import { Request, Response, NextFunction } from 'express-serve-static-core';
 import { body } from 'express-validator';
 import { register, login, getMe, logout, refreshToken } from '../controllers/authController';
 import { protect } from '../middleware/auth';
 
 const router = express.Router();
+
+// Define request body types
+interface RegisterRequestBody {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  identityNumber?: string;
+}
+
+interface LoginRequestBody {
+  email: string;
+  password: string;
+}
+
+interface RefreshTokenRequestBody {
+  refresh_token: string;
+}
+
+// Extend Express Request type to include files
+declare module 'express-serve-static-core' {
+  interface Request {
+    files?: Express.Multer.File[];
+  }
+}
 
 /**
  * @swagger
@@ -80,7 +106,9 @@ router.post(
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters')
   ],
-  register
+  (req: Request<{}, {}, RegisterRequestBody>, res: Response, next: NextFunction) => {
+    register(req, res, next);
+  }
 );
 
 /**
@@ -125,7 +153,9 @@ router.post(
     body('email').isEmail().withMessage('Please include a valid email'),
     body('password').exists().withMessage('Password is required')
   ],
-  login
+  (req: Request<{}, {}, LoginRequestBody>, res: Response, next: NextFunction) => {
+    login(req, res, next);
+  }
 );
 
 /**
@@ -162,7 +192,9 @@ router.post(
  *       401:
  *         description: Not authorized
  */
-router.get('/me', protect, getMe);
+router.get('/me', protect, (req: Request, res: Response, next: NextFunction) => {
+  getMe(req, res, next);
+});
 
 /**
  * @swagger
@@ -185,7 +217,9 @@ router.get('/me', protect, getMe);
  *                 data:
  *                   type: object
  */
-router.get('/logout', protect, logout);
+router.get('/logout', protect, (req: Request, res: Response, next: NextFunction) => {
+  logout(req, res, next);
+});
 
 /**
  * @swagger
@@ -227,7 +261,9 @@ router.post(
   [
     body('refresh_token').not().isEmpty().withMessage('Refresh token is required')
   ],
-  refreshToken
+  (req: Request<{}, {}, RefreshTokenRequestBody>, res: Response, next: NextFunction) => {
+    refreshToken(req, res, next);
+  }
 );
 
 export default router; 
