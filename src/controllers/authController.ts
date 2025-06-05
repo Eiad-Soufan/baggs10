@@ -164,15 +164,21 @@ const sendTokenResponse = (user: IUser, statusCode: number, res: Response): void
 };
 
 const generateToken = (user: IUser, type: 'access' | 'refresh'): string => {
-  const options: SignOptions = {
-    expiresIn: type === 'access' 
-      ? (process.env.JWT_EXPIRE ? parseInt(process.env.JWT_EXPIRE) : 3600) // 1 hour default in seconds
-      : (process.env.JWT_REFRESH_EXPIRE ? parseInt(process.env.JWT_REFRESH_EXPIRE) : 604800) // 7 days default in seconds
-  };
+  let expiresIn: number;
+
+    if (type === 'access') {
+      expiresIn = process.env.JWT_EXPIRE ? parseInt(process.env.JWT_EXPIRE) : 3600;
+    } else {
+      expiresIn = process.env.JWT_REFRESH_EXPIRE ? parseInt(process.env.JWT_REFRESH_EXPIRE) : 604800;
+    }
+
+const options: SignOptions = {
+  expiresIn
+};
 
   return jwt.sign(
     { id: user._id },
-    process.env.JWT_SECRET || 'your-secret-key',
+    process.env.JWT_SECRET ?? 'your-secret-key',
     options
   );
 };
@@ -198,7 +204,7 @@ export const refreshToken = async (
     // Verify refresh token
     const decoded = jwt.verify(
       refresh_token,
-      process.env.JWT_SECRET || 'your-secret-key'
+      process.env.JWT_SECRET ?? 'your-secret-key'
     ) as { id: string };
 
     // Get user from token
