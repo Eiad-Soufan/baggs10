@@ -69,9 +69,12 @@ export const getOrders = async (
       };
     }
 
-    // Search in totalAmount
+    // Search in items name or totalAmount
     if (search) {
-      query.totalAmount = { $regex: search, $options: 'i' };
+      query.$or = [
+        { 'items.name': { $regex: search, $options: 'i' } },
+        { totalAmount: { $regex: search, $options: 'i' } }
+      ];
     }
 
     // Pagination
@@ -83,7 +86,7 @@ export const getOrders = async (
     const orders = await Order.find(query)
       .populate('userId', 'name email')
       .populate('workerId', 'name email')
-      .populate('serviceId', 'name price')
+      .populate('complaintId')
       .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
       .skip(startIndex)
       .limit(limitNum);
@@ -128,7 +131,7 @@ export const getMyOrders = async (
  * @access  Private
  */
 export const getOrder = async (
-  req: Request<{ id: string }>,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -136,20 +139,20 @@ export const getOrder = async (
     const order = await Order.findById(req.params.id)
       .populate('userId', 'name email')
       .populate('workerId', 'name email')
-      .populate('serviceId', 'name price');
+      .populate('complaintId');
 
     if (!order) {
-      errorResponse(res, STATUS_CODES.NOT_FOUND, `Order not found with id of ${req.params.id}`);
+      errorResponse(res, STATUS_CODES.NOT_FOUND, 'Order not found');
       return;
     }
 
-    // Make sure user is order owner or admin
-    if (order.userId.toString() !== req.user!._id.toString() && req.user!.role !== 'admin') {
+    // Check if user is admin or the order belongs to the user
+    if (req.user?.role !== 'admin' && order.userId.toString() !== req.user?._id.toString()) {
       errorResponse(res, STATUS_CODES.FORBIDDEN, 'Not authorized to access this order');
       return;
     }
 
-    successResponse(res, STATUS_CODES.OK, 'Order details retrieved successfully', order);
+    successResponse(res, STATUS_CODES.OK, 'Order retrieved successfully', order);
   } catch (err) {
     next(err);
   }
@@ -183,24 +186,17 @@ export const createOrder = async (
 };
 
 /**
- * @desc    Update order
+ * @desc    Update order (Admin only)
  * @route   PUT /api/v1/orders/:id
  * @access  Private/Admin
  */
 export const updateOrder = async (
-  req: Request<{ id: string }>,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    let order = await Order.findById(req.params.id);
-
-    if (!order) {
-      errorResponse(res, STATUS_CODES.NOT_FOUND, `Order not found with id of ${req.params.id}`);
-      return;
-    }
-
-    // If status is being changed to completed, add completedAt
+  // If status is being changed to completed, add completedAt
     if (req.body.status === 'completed') {
       req.body.completedAt = new Date();
     }
@@ -209,8 +205,13 @@ export const updateOrder = async (
     if (req.body.status === 'cancelled') {
       req.body.cancelledAt = new Date();
     }
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      errorResponse(res, STATUS_CODES.VALIDATION_ERROR, 'Validation error', errors.array());
+      return;
+    }
 
-    order = await Order.findByIdAndUpdate(
+    const order = await Order.findByIdAndUpdate(
       req.params.id,
       req.body,
       {
@@ -218,9 +219,14 @@ export const updateOrder = async (
         runValidators: true
       }
     )
-    .populate('userId', 'name email')
-    .populate('workerId', 'name email')
-    .populate('serviceId', 'name price');
+      .populate('userId', 'name email')
+      .populate('workerId', 'name email')
+      .populate('complaintId');
+
+    if (!order) {
+      errorResponse(res, STATUS_CODES.NOT_FOUND, 'Order not found');
+      return;
+    }
 
     successResponse(res, STATUS_CODES.OK, 'Order updated successfully', order);
   } catch (err) {
@@ -229,12 +235,12 @@ export const updateOrder = async (
 };
 
 /**
- * @desc    Delete order
+ * @desc    Delete order (Admin only)
  * @route   DELETE /api/v1/orders/:id
  * @access  Private/Admin
  */
 export const deleteOrder = async (
-  req: Request<{ id: string }>,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -242,10 +248,9 @@ export const deleteOrder = async (
     const order = await Order.findById(req.params.id);
 
     if (!order) {
-      errorResponse(res, STATUS_CODES.NOT_FOUND, `Order not found with id of ${req.params.id}`);
+      errorResponse(res, STATUS_CODES.NOT_FOUND, 'Order not found');
       return;
     }
-
     await order.deleteOne();
     successResponse(res, STATUS_CODES.OK, 'Order deleted successfully', null);
   } catch (err) {
@@ -267,8 +272,21 @@ export const addSampleOrders = async (
     const sampleOrders = [
       {
         userId: req.user!._id,
-        serviceId: new Types.ObjectId(), // You'll need to provide a valid service ID
-        workerId: new Types.ObjectId(), // You'll need to provide a valid worker ID
+        items: [
+          {
+            name: 'Fragile Glass Vase',
+            weight: 2.5,
+            images: ['https://example.com/vase1.jpg', 'https://example.com/vase2.jpg', 'https://example.com/vase3.jpg'],
+            isBreakable: true
+          },
+          {
+            name: 'Wooden Box',
+            weight: 5.0,
+            images: ['https://example.com/box1.jpg', 'https://example.com/box2.jpg', 'https://example.com/box3.jpg'],
+            isBreakable: false
+          }
+        ],
+        workerId: new Types.ObjectId(),
         totalAmount: 150.00,
         scheduledDate: new Date(),
         status: 'completed',
@@ -277,7 +295,14 @@ export const addSampleOrders = async (
       },
       {
         userId: req.user!._id,
-        serviceId: new Types.ObjectId(),
+        items: [
+          {
+            name: 'Electronics Package',
+            weight: 3.0,
+            images: ['https://example.com/electronics1.jpg', 'https://example.com/electronics2.jpg', 'https://example.com/electronics3.jpg'],
+            isBreakable: true
+          }
+        ],
         workerId: new Types.ObjectId(),
         totalAmount: 200.00,
         scheduledDate: new Date(),
@@ -286,7 +311,14 @@ export const addSampleOrders = async (
       },
       {
         userId: req.user!._id,
-        serviceId: new Types.ObjectId(),
+        items: [
+          {
+            name: 'Furniture Set',
+            weight: 25.0,
+            images: ['https://example.com/furniture1.jpg', 'https://example.com/furniture2.jpg', 'https://example.com/furniture3.jpg'],
+            isBreakable: false
+          }
+        ],
         workerId: new Types.ObjectId(),
         totalAmount: 175.00,
         scheduledDate: new Date(),
@@ -296,8 +328,20 @@ export const addSampleOrders = async (
       },
       {
         userId: req.user!._id,
-        serviceId: new Types.ObjectId(),
-        workerId: new Types.ObjectId(),
+        items: [
+          {
+            name: 'Clothing Package',
+            weight: 1.5,
+            images: ['https://example.com/clothing1.jpg', 'https://example.com/clothing2.jpg', 'https://example.com/clothing3.jpg'],
+            isBreakable: false
+          },
+          {
+            name: 'Shoes Box',
+            weight: 2.0,
+            images: ['https://example.com/shoes1.jpg', 'https://example.com/shoes2.jpg', 'https://example.com/shoes3.jpg'],
+            isBreakable: false
+          }
+        ],
         totalAmount: 125.00,
         scheduledDate: new Date(),
         status: 'pending',
@@ -305,8 +349,16 @@ export const addSampleOrders = async (
       },
       {
         userId: req.user!._id,
-        serviceId: new Types.ObjectId(),
+        items: [
+          {
+            name: 'Art Collection',
+            weight: 8.0,
+            images: ['https://example.com/art1.jpg', 'https://example.com/art2.jpg', 'https://example.com/art3.jpg'],
+            isBreakable: true
+          }
+        ],
         workerId: new Types.ObjectId(),
+        complaintId: new Types.ObjectId(),
         totalAmount: 300.00,
         scheduledDate: new Date(),
         status: 'cancelled',

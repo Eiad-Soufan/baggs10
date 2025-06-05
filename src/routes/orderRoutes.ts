@@ -20,11 +20,33 @@ router.use(protect);
  * @swagger
  * components:
  *   schemas:
+ *     OrderItem:
+ *       type: object
+ *       required:
+ *         - name
+ *         - weight
+ *         - images
+ *         - isBreakable
+ *       properties:
+ *         name:
+ *           type: string
+ *           description: Name of the item
+ *         weight:
+ *           type: number
+ *           description: Weight of the item
+ *         images:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Array of image URLs
+ *         isBreakable:
+ *           type: boolean
+ *           description: Whether the item is breakable
  *     Order:
  *       type: object
  *       required:
  *         - userId
- *         - serviceId
+ *         - items
  *         - totalAmount
  *         - scheduledDate
  *       properties:
@@ -34,16 +56,22 @@ router.use(protect);
  *         userId:
  *           type: string
  *           description: ID of user who placed the order
- *         serviceId:
- *           type: string
- *           description: ID of the service ordered
  *         workerId:
  *           type: string
  *           description: ID of worker assigned to the order
+ *         complaintId:
+ *           type: string
+ *           description: ID of associated complaint if any
+ *         items:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/OrderItem'
+ *           description: Array of items in the order
  *         status:
  *           type: string
  *           enum: [pending, in_progress, completed, cancelled]
  *           default: pending
+ *           description: Current status of the order
  *         totalAmount:
  *           type: number
  *           description: Total amount of the order
@@ -51,21 +79,27 @@ router.use(protect);
  *           type: string
  *           enum: [pending, paid, failed, refunded]
  *           default: pending
+ *           description: Payment status of the order
  *         scheduledDate:
  *           type: string
  *           format: date-time
+ *           description: Scheduled date for the order
  *         completedAt:
  *           type: string
  *           format: date-time
+ *           description: Date when the order was completed
  *         cancelledAt:
  *           type: string
  *           format: date-time
+ *           description: Date when the order was cancelled
  *         createdAt:
  *           type: string
  *           format: date-time
+ *           description: Date when the order was created
  *         updatedAt:
  *           type: string
  *           format: date-time
+ *           description: Date when the order was last updated
  */
 
 /**
@@ -204,19 +238,37 @@ router.get('/:id', getOrder);
  *           schema:
  *             type: object
  *             required:
- *               - serviceId
+ *               - items
  *               - totalAmount
  *               - scheduledDate
  *             properties:
- *               serviceId:
- *                 type: string
- *               workerId:
- *                 type: string
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - name
+ *                     - weight
+ *                     - images
+ *                     - isBreakable
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     weight:
+ *                       type: number
+ *                     images:
+ *                       type: array
+ *                     isBreakable:
+ *                       type: boolean
  *               totalAmount:
  *                 type: number
  *               scheduledDate:
  *                 type: string
  *                 format: date-time
+ *               workerId:
+ *                 type: string
+ *               complaintId:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Order created successfully
@@ -237,7 +289,35 @@ router.get('/:id', getOrder);
 router.post(
   '/',
   [
-    body('serviceId').not().isEmpty().withMessage('Service ID is required'),
+    body('items')
+      .isArray()
+      .withMessage('Items must be an array')
+      .notEmpty()
+      .withMessage('At least one item is required'),
+    body('items.*.name')
+      .notEmpty()
+      .withMessage('Item name is required')
+      .isLength({ max: 100 })
+      .withMessage('Item name cannot be more than 100 characters'),
+    body('items.*.weight')
+      .isNumeric()
+      .withMessage('Item weight must be a number')
+      .isFloat({ min: 0 })
+      .withMessage('Item weight cannot be negative'),
+    body('items.*.images')
+      .isArray()
+      .withMessage('Images must be an array')
+      .notEmpty()
+      .withMessage('At least one image is required'),
+    body('items.*.images.*')
+      .isString()
+      .withMessage('Image must be a string')
+      .trim()
+      .notEmpty()
+      .withMessage('Image URL cannot be empty'),
+    body('items.*.isBreakable')
+      .isBoolean()
+      .withMessage('isBreakable must be a boolean'),
     body('totalAmount')
       .isNumeric()
       .withMessage('Total amount must be a number')
@@ -245,7 +325,15 @@ router.post(
       .withMessage('Total amount cannot be negative'),
     body('scheduledDate')
       .isISO8601()
-      .withMessage('Scheduled date must be a valid date')
+      .withMessage('Scheduled date must be a valid date'),
+    body('workerId')
+      .optional()
+      .isMongoId()
+      .withMessage('Invalid worker ID'),
+    body('complaintId')
+      .optional()
+      .isMongoId()
+      .withMessage('Invalid complaint ID')
   ],
   createOrder
 );
@@ -279,6 +367,21 @@ router.post(
  *                 enum: [pending, paid, failed, refunded]
  *               workerId:
  *                 type: string
+ *               complaintId:
+ *                 type: string
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     weight:
+ *                       type: number
+ *                     images:
+ *                       type: array
+ *                     isBreakable:
+ *                       type: boolean
  *     responses:
  *       200:
  *         description: Order updated successfully
@@ -311,7 +414,50 @@ router.put(
     body('paymentStatus')
       .optional()
       .isIn(['pending', 'paid', 'failed', 'refunded'])
-      .withMessage('Invalid payment status')
+      .withMessage('Invalid payment status'),
+    body('workerId')
+      .optional()
+      .isMongoId()
+      .withMessage('Invalid worker ID'),
+    body('complaintId')
+      .optional()
+      .isMongoId()
+      .withMessage('Invalid complaint ID'),
+    body('items')
+      .optional()
+      .isArray()
+      .withMessage('Items must be an array')
+      .notEmpty()
+      .withMessage('At least one item is required'),
+    body('items.*.name')
+      .optional()
+      .notEmpty()
+      .withMessage('Item name is required')
+      .isLength({ max: 100 })
+      .withMessage('Item name cannot be more than 100 characters'),
+    body('items.*.weight')
+      .optional()
+      .isNumeric()
+      .withMessage('Item weight must be a number')
+      .isFloat({ min: 0 })
+      .withMessage('Item weight cannot be negative'),
+    body('items.*.images')
+      .optional()
+      .isArray()
+      .withMessage('Images must be an array')
+      .notEmpty()
+      .withMessage('At least one image is required'),
+    body('items.*.images.*')
+      .optional()
+      .isString()
+      .withMessage('Image must be a string')
+      .trim()
+      .notEmpty()
+      .withMessage('Image URL cannot be empty'),
+    body('items.*.isBreakable')
+      .optional()
+      .isBoolean()
+      .withMessage('isBreakable must be a boolean')
   ],
   updateOrder
 );
