@@ -13,6 +13,9 @@ import notificationRoutes from './routes/notificationRoutes';
 import orderRoutes from './routes/orderRoutes';
 import { connectDB } from './config/db';
 
+// Import models
+import './models/Service';
+
 // Swagger documentation
 import swaggerSpec from './config/swagger';
 

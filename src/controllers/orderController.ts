@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
-import Order, { IOrder } from '../models/Order';
+import Order from '../models/Order';
 import { successResponse, errorResponse, STATUS_CODES } from '../utils/responseHandler';
 import { Types } from 'mongoose';
 import { IUser } from '../models/User';
