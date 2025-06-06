@@ -25,9 +25,6 @@ import errorHandler from './middleware/error';
 // Load env vars
 dotenv.config();
 
-// Connect to database
-connectDB();
-
 // Initialize app
 const app: Express = express();
 
@@ -71,8 +68,15 @@ app.get('/', (req: Request, res: Response) => {
 // Error handler middleware (should be last)
 app.use(errorHandler);
 
-const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
+// Connect to database and start server only if not in serverless environment
+if (process.env.NODE_ENV !== 'production') {
+  const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
+  
+  connectDB().then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    });
+  });
+}
 
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-}); 
+export default app; 
