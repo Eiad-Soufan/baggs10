@@ -24,12 +24,12 @@ interface RefreshTokenRequestBody {
   refresh_token: string;
 }
 
-// Extend Express Request type to include files
-declare module 'express-serve-static-core' {
-  interface Request {
-    files?: Express.Multer.File[];
-  }
-}
+// // Extend Express Request type to include files
+// declare module 'express-serve-static-core' {
+//   interface Request {
+//     files?: Express.Multer.File[];
+//   }
+// }
 
 /**
  * @swagger

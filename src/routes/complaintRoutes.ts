@@ -258,17 +258,42 @@ router.get('/:id', getComplaint);
 router.post(
   '/',
   [
+    body('title')
+      .notEmpty()
+      .withMessage('Title is required')
+      .isLength({ max: 200 })
+      .withMessage('Title cannot be more than 200 characters'),
+    body('description')
+      .notEmpty()
+      .withMessage('Description is required')
+      .isLength({ max: 2000 })
+      .withMessage('Description cannot be more than 2000 characters'),
+    body('category')
+      .notEmpty()
+      .withMessage('Category is required')
+      .isIn(['service', 'worker', 'payment', 'technical', 'other'])
+      .withMessage('Invalid category'),
+    body('priority')
+      .notEmpty()
+      .withMessage('Priority is required')
+      .isIn(['low', 'medium', 'high', 'urgent'])
+      .withMessage('Invalid priority'),
     body('orderId')
-      .not()
-      .isEmpty()
-      .withMessage('Order ID is required'),
-    body('reason')
-      .not()
-      .isEmpty()
-      .withMessage('Reason is required')
+      .notEmpty()
+      .withMessage('Order ID is required')
+      .isMongoId()
+      .withMessage('Invalid order ID'),
+    body('attachments')
+      .optional()
+      .isArray()
+      .withMessage('Attachments must be an array of strings'),
+    body('attachments.*')
+      .optional()
+      .isString()
+      .withMessage('Each attachment must be a string')
       .trim()
-      .isLength({ max: 1000 })
-      .withMessage('Reason cannot be more than 1000 characters')
+      .notEmpty()
+      .withMessage('Attachment URL cannot be empty')
   ],
   createComplaint
 );
@@ -322,12 +347,21 @@ router.post(
   '/:id/responses',
   [
     body('message')
-      .not()
-      .isEmpty()
+      .notEmpty()
       .withMessage('Message is required')
-      .trim()
       .isLength({ max: 1000 })
-      .withMessage('Message cannot be more than 1000 characters')
+      .withMessage('Message cannot be more than 1000 characters'),
+    body('attachments')
+      .optional()
+      .isArray()
+      .withMessage('Attachments must be an array of strings'),
+    body('attachments.*')
+      .optional()
+      .isString()
+      .withMessage('Each attachment must be a string')
+      .trim()
+      .notEmpty()
+      .withMessage('Attachment URL cannot be empty')
   ],
   addResponse
 );
@@ -383,12 +417,49 @@ router.put(
   '/:id',
   authorize('admin'),
   [
+    body('title')
+      .optional()
+      .isLength({ max: 200 })
+      .withMessage('Title cannot be more than 200 characters'),
+    body('description')
+      .optional()
+      .isLength({ max: 2000 })
+      .withMessage('Description cannot be more than 2000 characters'),
+    body('category')
+      .optional()
+      .isIn(['service', 'worker', 'payment', 'technical', 'other'])
+      .withMessage('Invalid category'),
+    body('priority')
+      .optional()
+      .isIn(['low', 'medium', 'high', 'urgent'])
+      .withMessage('Invalid priority'),
     body('status')
-      .not()
-      .isEmpty()
-      .withMessage('Status is required')
-      .isIn(['pending', 'open', 'closed'])
-      .withMessage('Invalid status')
+      .optional()
+      .isIn(['pending', 'in_progress', 'resolved', 'rejected', 'closed'])
+      .withMessage('Invalid status'),
+    body('assignedToId')
+      .optional()
+      .isMongoId()
+      .withMessage('Invalid assigned to ID'),
+    body('relatedWorkerId')
+      .optional()
+      .isMongoId()
+      .withMessage('Invalid related worker ID'),
+    body('resolution')
+      .optional()
+      .isLength({ max: 1000 })
+      .withMessage('Resolution cannot be more than 1000 characters'),
+    body('attachments')
+      .optional()
+      .isArray()
+      .withMessage('Attachments must be an array of strings'),
+    body('attachments.*')
+      .optional()
+      .isString()
+      .withMessage('Each attachment must be a string')
+      .trim()
+      .notEmpty()
+      .withMessage('Attachment URL cannot be empty')
   ],
   updateComplaint
 );
