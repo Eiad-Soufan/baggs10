@@ -8,6 +8,22 @@
   ],
   "rewrites": [
     {
+      "source": "/api-docs/swagger-ui.css",
+      "destination": "/dist/index.js"
+    },
+    {
+      "source": "/api-docs/swagger-ui-bundle.js",
+      "destination": "/dist/index.js"
+    },
+    {
+      "source": "/api-docs/swagger-ui-standalone-preset.js",
+      "destination": "/dist/index.js"
+    },
+    {
+      "source": "/api-docs/favicon-32x32.png",
+      "destination": "/dist/index.js"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/dist/index.js"
     },
@@ -20,12 +36,23 @@
       "destination": "/dist/index.js"
     }
   ],
+  "headers": [
+    {
+      "source": "/api-docs/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/css"
+        }
+      ]
+    }
+  ],
   "env": {
     "NODE_ENV": "production",
-    "PORT":"9091",
-    "JWT_SECRET":"your_super_secret_jwt_key_change_in_production",
-    "JWT_EXPIRES_IN":"1d",
-    "JWT_COOKIE_EXPIRE":"1",
-    "MONGODB_URI":"mongodb+srv://raoufsato999:Raouf13579@cluster0.f5x0kbi.mongodb.net/?retryWrites=true&w=majority&appName=Baggs-Competition"
+    "PORT": "9091",
+    "JWT_SECRET": "your_super_secret_jwt_key_change_in_production",
+    "JWT_EXPIRES_IN": "1d",
+    "JWT_COOKIE_EXPIRE": "1",
+    "MONGODB_URI": "mongodb+srv://raoufsato999:Raouf13579@cluster0.f5x0kbi.mongodb.net/?retryWrites=true&w=majority&appName=Baggs-Competition"
   }
 } 

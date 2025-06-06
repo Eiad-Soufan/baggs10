@@ -64,8 +64,22 @@ app.use('/api/v1/complaints', complaintRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/orders', orderRoutes);
 
-// Set up Swagger docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Set up Swagger docs with custom options
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "Baggs Competition API Documentation",
+  customfavIcon: "/api-docs/favicon-32x32.png",
+  swaggerOptions: {
+    persistAuthorization: true,
+    docExpansion: 'none',
+    filter: true,
+    showCommonExtensions: true,
+    syntaxHighlight: {
+      activated: true,
+      theme: "monokai"
+    }
+  }
+}));
 
 // Basic route
 app.get('/', (req: Request, res: Response) => {
