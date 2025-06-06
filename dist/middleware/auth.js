@@ -9,6 +9,7 @@ const User_1 = __importDefault(require("../models/User"));
 const errorResponse_1 = __importDefault(require("../utils/errorResponse"));
 // Protect routes
 const protect = async (req, res, next) => {
+    var _a;
     let token;
     if (req.headers.authorization &&
         req.headers.authorization.startsWith('Bearer')) {
@@ -21,7 +22,7 @@ const protect = async (req, res, next) => {
     }
     try {
         // Verify token
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || '');
+        const decoded = jsonwebtoken_1.default.verify(token, (_a = process.env.JWT_SECRET) !== null && _a !== void 0 ? _a : '');
         const user = await User_1.default.findById(decoded.id);
         if (!user) {
             return next(new errorResponse_1.default('User not found', 404));
@@ -37,9 +38,9 @@ exports.protect = protect;
 // Grant access to specific roles
 const authorize = (...roles) => {
     return (req, res, next) => {
-        var _a;
+        var _a, _b;
         if (!req.user || !roles.includes(req.user.role)) {
-            return next(new errorResponse_1.default(`User role ${((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) || 'UNKNOWN'} is not authorized to access this route`, 403));
+            return next(new errorResponse_1.default(`User role ${(_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role) !== null && _b !== void 0 ? _b : 'UNKNOWN'} is not authorized to access this route`, 403));
         }
         next();
     };

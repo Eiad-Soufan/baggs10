@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logout = exports.getMe = exports.login = exports.register = void 0;
+exports.refreshToken = exports.logout = exports.getMe = exports.login = exports.register = void 0;
 const express_validator_1 = require("express-validator");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_1 = __importDefault(require("../models/User"));
@@ -107,22 +107,61 @@ const logout = (req, res, next) => {
 exports.logout = logout;
 // Get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
-    // Create token
-    const token = jsonwebtoken_1.default.sign({ id: user._id }, process.env.JWT_SECRET || '', {
-        expiresIn: process.env.JWT_EXPIRES_IN
-    });
-    const options = {
-        expires: new Date(Date.now() + (parseInt(process.env.JWT_COOKIE_EXPIRE || '30') * 24 * 60 * 60 * 1000)),
-        httpOnly: true
+    // Create tokens
+    const accessToken = generateToken(user, 'access');
+    const refreshToken = generateToken(user, 'refresh');
+    const response = {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_in: Date.now() + (process.env.JWT_EXPIRE ? parseInt(process.env.JWT_EXPIRE) * 1000 : 3600000), // 1 hour default
+        refresh_expires_in: Date.now() + (process.env.JWT_REFRESH_EXPIRE ? parseInt(process.env.JWT_REFRESH_EXPIRE) * 1000 : 604800000) // 7 days default
     };
-    if (process.env.NODE_ENV === 'production') {
-        options.secure = true;
-    }
-    res
-        .status(statusCode)
-        .json({
+    res.status(statusCode).json({
         success: true,
-        token
+        data: response
     });
 };
+const generateToken = (user, type) => {
+    var _a;
+    let expiresIn;
+    if (type === 'access') {
+        expiresIn = process.env.JWT_EXPIRE ? parseInt(process.env.JWT_EXPIRE) : 3600;
+    }
+    else {
+        expiresIn = process.env.JWT_REFRESH_EXPIRE ? parseInt(process.env.JWT_REFRESH_EXPIRE) : 604800;
+    }
+    const options = {
+        expiresIn
+    };
+    return jsonwebtoken_1.default.sign({ id: user._id }, (_a = process.env.JWT_SECRET) !== null && _a !== void 0 ? _a : 'your-secret-key', options);
+};
+/**
+ * @desc    Refresh access token
+ * @route   POST /api/v1/auth/refresh
+ * @access  Public
+ */
+const refreshToken = async (req, res, next) => {
+    var _a;
+    try {
+        const { refresh_token } = req.body;
+        if (!refresh_token) {
+            next(new errorResponse_1.default('Refresh token is required', 400));
+            return;
+        }
+        // Verify refresh token
+        const decoded = jsonwebtoken_1.default.verify(refresh_token, (_a = process.env.JWT_SECRET) !== null && _a !== void 0 ? _a : 'your-secret-key');
+        // Get user from token
+        const user = await User_1.default.findById(decoded.id);
+        if (!user) {
+            next(new errorResponse_1.default('User not found', 404));
+            return;
+        }
+        // Generate new tokens
+        sendTokenResponse(user, 200, res);
+    }
+    catch (err) {
+        next(new errorResponse_1.default('Invalid refresh token', 401));
+    }
+};
+exports.refreshToken = refreshToken;
 //# sourceMappingURL=authController.js.map

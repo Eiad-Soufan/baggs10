@@ -12,11 +12,17 @@ const options = {
             title: 'Baggs Competition API',
             version: '1.0.0',
             description: 'API for managing users with authentication and role-based access control',
+            contact: {
+                name: 'API Support',
+                email: 'support@baggs.com'
+            }
         },
         servers: [
             {
-                url: 'http://localhost:9091',
-                description: 'Development server',
+                url: process.env.NODE_ENV === 'production'
+                    ? 'https://baggs-competition-api-ha9w.vercel.app'
+                    : 'http://localhost:9091',
+                description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
             },
         ],
         components: {
@@ -28,6 +34,9 @@ const options = {
                 },
             },
         },
+        security: [{
+                bearerAuth: []
+            }]
     },
     apis: [path_1.default.join(__dirname, '../routes/*.ts')], // Updated to look for TypeScript files
 };

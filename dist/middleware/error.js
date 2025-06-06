@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const responseHandler_1 = require("../utils/responseHandler");
 const errorHandler = (err, req, res, next) => {
+    var _a;
     let error = { ...err };
     error.message = err.message;
     // Log to console for dev
@@ -24,7 +25,7 @@ const errorHandler = (err, req, res, next) => {
         return;
     }
     // Default to 500 server error
-    (0, responseHandler_1.errorResponse)(res, error.statusCode || responseHandler_1.STATUS_CODES.INTERNAL_SERVER_ERROR, error.message || 'Server Error');
+    (0, responseHandler_1.errorResponse)(res, (_a = error.statusCode) !== null && _a !== void 0 ? _a : responseHandler_1.STATUS_CODES.INTERNAL_SERVER_ERROR, error.message || 'Server Error');
 };
 exports.default = errorHandler;
 //# sourceMappingURL=error.js.map
