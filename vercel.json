@@ -21,6 +21,11 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "PORT":"9091",
+    "JWT_SECRET":"your_super_secret_jwt_key_change_in_production",
+    "JWT_EXPIRES_IN":"1d",
+    "JWT_COOKIE_EXPIRE":"1",
+    "MONGODB_URI":"mongodb+srv://raoufsato999:Raouf13579@cluster0.f5x0kbi.mongodb.net/?retryWrites=true&w=majority&appName=Baggs-Competition"
   }
 } 
