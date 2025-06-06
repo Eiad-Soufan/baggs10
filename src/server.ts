@@ -63,7 +63,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Basic route
 app.get('/', (req: Request, res: Response) => {
   res.json({
-    message: 'Welcome to the User Management API',
+    message: 'Welcome to the Baggs Competition API',
     docs: '/api-docs'
   });
 });

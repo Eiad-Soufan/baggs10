@@ -9,7 +9,7 @@ const options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'User Management API',
+            title: 'Baggs Competition API',
             version: '1.0.0',
             description: 'API for managing users with authentication and role-based access control',
         },

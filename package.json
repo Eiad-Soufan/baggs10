@@ -1,7 +1,7 @@
 {
   "name": "user-management-api",
   "version": "1.0.0",
-  "description": "User management API with authentication and CRUD operations",
+  "description": "Baggs Competition API with authentication and CRUD operations",
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
