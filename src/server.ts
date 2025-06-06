@@ -32,7 +32,12 @@ const app: Express = express();
 app.use(express.json());
 
 // Enable CORS
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : '*',
+  credentials: true
+}));
 
 // Set security headers with Swagger UI compatibility
 app.use(
@@ -45,6 +50,11 @@ app.use(
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
+
+// Health check route
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 // Mount routers
 app.use('/api/v1/auth', authRoutes);
@@ -61,7 +71,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/', (req: Request, res: Response) => {
   res.json({
     message: 'Welcome to the Baggs Competition API',
-    docs: '/api-docs'
+    docs: '/api-docs',
+    health: '/health'
   });
 });
 
@@ -76,6 +87,9 @@ if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
       console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
     });
+  }).catch((error) => {
+    console.error('Failed to connect to database:', error);
+    process.exit(1);
   });
 }
 
