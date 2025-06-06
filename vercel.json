@@ -6,36 +6,7 @@
       "use": "@vercel/node"
     }
   ],
-  "rewrites": [
-    {
-      "source": "/api-docs/swagger-ui.css",
-      "destination": "/dist/index.js"
-    },
-    {
-      "source": "/api-docs/swagger-ui-bundle.js",
-      "destination": "/dist/index.js"
-    },
-    {
-      "source": "/api-docs/swagger-ui-standalone-preset.js",
-      "destination": "/dist/index.js"
-    },
-    {
-      "source": "/api-docs/favicon-32x32.png",
-      "destination": "/dist/index.js"
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": "/dist/index.js"
-    },
-    {
-      "source": "/api-docs/(.*)",
-      "destination": "/dist/index.js"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/dist/index.js"
-    }
-  ],
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }],  
   "headers": [
     {
       "source": "/api-docs/(.*)",
