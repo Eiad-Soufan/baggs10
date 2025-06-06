@@ -21,7 +21,6 @@ type ComplaintStatus = (typeof ComplaintStatus)[keyof typeof ComplaintStatus];
 declare module 'express' {
   interface Request {
     user?: IUser;
-    files?: Express.Multer.File[];
   }
 }
 
@@ -284,11 +283,6 @@ export const createComplaint = async (
     // Add user to req.body
     req.body.userId = req.user!._id;
 
-    // Handle file uploads
-    if (req.files && Array.isArray(req.files)) {
-      req.body.attachments = req.files.map(file => file.path);
-    }
-
     const complaint = await Complaint.create(req.body);
     successResponse(res, STATUS_CODES.CREATED, 'Complaint created successfully', complaint);
   } catch (err) {
@@ -336,7 +330,7 @@ export const addResponse = async (
       message: req.body.message,
       responderId: req.user!._id,
       responderRole: req.user!.role as 'customer' | 'admin',
-      attachments: req.files?.map(file => file.path),
+      attachments: req.body.attachments || [],
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -385,12 +379,6 @@ export const updateComplaint = async (
     if (!complaint) {
       errorResponse(res, STATUS_CODES.NOT_FOUND, `Complaint not found with id of ${req.params.id}`);
       return;
-    }
-
-    // Handle file uploads
-    if (req.files && Array.isArray(req.files)) {
-      const newAttachments = req.files.map(file => file.path);
-      req.body.attachments = [...(complaint.attachments || []), ...newAttachments];
     }
 
     // If status is being changed to closed, add closedAt and closedByAdminId
