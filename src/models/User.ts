@@ -9,7 +9,7 @@ export interface IUser {
   password: string;
   identityNumber?: string;
   isAvailable: boolean;
-  role: 'customer' | 'admin';
+  role: 'customer' | 'admin' ;
   createdAt: Date;
   updatedAt: Date;
 }

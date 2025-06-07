@@ -20,6 +20,24 @@ router.use(protect);
  * @swagger
  * components:
  *   schemas:
+ *     OrderRating:
+ *       type: object
+ *       required:
+ *         - rating
+ *       properties:
+ *         rating:
+ *           type: number
+ *           minimum: 1
+ *           maximum: 5
+ *           description: Rating value between 1 and 5
+ *         comment:
+ *           type: string
+ *           maxLength: 500
+ *           description: Optional comment about the order
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Date when the rating was created
  *     OrderItem:
  *       type: object
  *       required:
@@ -92,6 +110,9 @@ router.use(protect);
  *           type: string
  *           format: date-time
  *           description: Date when the order was cancelled
+ *         rating:
+ *           $ref: '#/components/schemas/OrderRating'
+ *           description: Rating and feedback for the order
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -382,6 +403,16 @@ router.post(
  *                       type: array
  *                     isBreakable:
  *                       type: boolean
+ *               rating:
+ *                 type: object
+ *                 properties:
+ *                   rating:
+ *                     type: number
+ *                     minimum: 1
+ *                     maximum: 5
+ *                   comment:
+ *                     type: string
+ *                     maxLength: 500
  *     responses:
  *       200:
  *         description: Order updated successfully
@@ -457,7 +488,21 @@ router.put(
     body('items.*.isBreakable')
       .optional()
       .isBoolean()
-      .withMessage('isBreakable must be a boolean')
+      .withMessage('isBreakable must be a boolean'),
+    body('rating')
+      .optional()
+      .isObject()
+      .withMessage('Rating must be an object'),
+    body('rating.rating')
+      .optional()
+      .isInt({ min: 1, max: 5 })
+      .withMessage('Rating must be a number between 1 and 5'),
+    body('rating.comment')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Comment cannot be more than 500 characters')
   ],
   updateOrder
 );

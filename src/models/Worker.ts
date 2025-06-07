@@ -45,7 +45,8 @@ const ServiceRatingSchema = new mongoose.Schema<IServiceRating>({
     type: Number,
     required: true,
     min: 1,
-    max: 5
+    max: 5,
+    default: 0,
   },
   comment: {
     type: String,

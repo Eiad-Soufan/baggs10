@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
+import { createServer } from 'http';
 // Route files
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
@@ -12,6 +13,7 @@ import complaintRoutes from './routes/complaintRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import orderRoutes from './routes/orderRoutes';
 import { connectDB } from './config/db';
+import { initializeSocket } from './config/socket';
 
 // Import models
 import './models/Service';
@@ -27,6 +29,10 @@ dotenv.config();
 
 // Initialize app
 const app: Express = express();
+const httpServer = createServer(app);
+
+// Initialize socket.io
+const io = initializeSocket(httpServer);
 
 // Body parser
 app.use(express.json());
@@ -98,7 +104,7 @@ if (process.env.NODE_ENV !== 'production') {
   const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
   
   connectDB().then(() => {
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
     });
   }).catch((error) => {
