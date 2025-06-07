@@ -8,7 +8,6 @@ import {
   updateComplaint,
   deleteComplaint,
   addResponse,
-  addComplaintFive,
   addSampleComplaints
 } from '../controllers/complaintController';
 
