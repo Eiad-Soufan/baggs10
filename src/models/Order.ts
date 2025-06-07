@@ -7,6 +7,12 @@ export interface IOrderItem {
   isBreakable: boolean;
 }
 
+export interface IOrderRating {
+  rating: number;
+  comment?: string;
+  createdAt: Date;
+}
+
 export interface IOrder {
   userId: Types.ObjectId;
   workerId?: Types.ObjectId;
@@ -18,6 +24,7 @@ export interface IOrder {
   scheduledDate: Date;
   completedAt?: Date;
   cancelledAt?: Date;
+  rating?: IOrderRating;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +49,24 @@ const OrderItemSchema = new mongoose.Schema<IOrderItem>({
   isBreakable: {
     type: Boolean,
     default: false
+  }
+});
+
+const OrderRatingSchema = new mongoose.Schema<IOrderRating>({
+  rating: {
+    type: Number,
+    required: [true, 'Rating is required'],
+    min: 1,
+    max: 5
+  },
+  comment: {
+    type: String,
+    trim: true,
+    maxlength: [500, 'Comment cannot be more than 500 characters']
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
@@ -85,7 +110,8 @@ const OrderSchema = new mongoose.Schema<IOrder>(
     },
     cancelledAt: {
       type: Date
-    }
+    },
+    rating: OrderRatingSchema
   },
   {
     timestamps: true

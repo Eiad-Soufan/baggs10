@@ -1,6 +1,13 @@
 import mongoose, { Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+export interface IServiceRating {
+  orderId: mongoose.Types.ObjectId;
+  rating: number;
+  comment?: string;
+  createdAt: Date;
+}
+
 export interface IWorker {
   _id: mongoose.Types.ObjectId;
   name: string;
@@ -10,15 +17,45 @@ export interface IWorker {
   identityNumber?: string;
   isAvailable: boolean;
   role: 'worker' | 'manager' | 'supervisor';
+  specialization: string;
+  rating: number;
+  completedJobs: number;
+  skills: string[];
+  certificates?: string[];
+  experience: number;
+  serviceRatings: IServiceRating[];
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface IWorkerMethods {
   comparePassword(enteredPassword: string): Promise<boolean>;
+  calculateAverageRating(): number;
 }
 
 export interface WorkerModel extends Model<IWorker, {}, IWorkerMethods> {}
+
+const ServiceRatingSchema = new mongoose.Schema<IServiceRating>({
+  orderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+    required: true
+  },
+  rating: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 5
+  },
+  comment: {
+    type: String,
+    trim: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
 
 const WorkerSchema = new mongoose.Schema<IWorker, WorkerModel, IWorkerMethods>(
   {
@@ -61,6 +98,35 @@ const WorkerSchema = new mongoose.Schema<IWorker, WorkerModel, IWorkerMethods>(
       enum: ['worker', 'manager', 'supervisor'],
       default: 'worker',
     },
+    specialization: {
+      type: String,
+      required: [true, 'Specialization is required'],
+      trim: true
+    },
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5
+    },
+    completedJobs: {
+      type: Number,
+      default: 0
+    },
+    skills: [{
+      type: String,
+      trim: true
+    }],
+    certificates: [{
+      type: String,
+      trim: true
+    }],
+    experience: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    serviceRatings: [ServiceRatingSchema]
   },
   {
     timestamps: true,
@@ -80,6 +146,13 @@ WorkerSchema.pre('save', async function (next) {
 // Method to compare passwords
 WorkerSchema.methods.comparePassword = async function (enteredPassword: string): Promise<boolean> {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Method to calculate average rating
+WorkerSchema.methods.calculateAverageRating = function(): number {
+  if (this.serviceRatings.length === 0) return 0;
+  const sum = this.serviceRatings.reduce((acc: number, curr: IServiceRating) => acc + curr.rating, 0);
+  return sum / this.serviceRatings.length;
 };
 
 const Worker = mongoose.model<IWorker, WorkerModel>('Worker', WorkerSchema);
