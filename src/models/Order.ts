@@ -22,6 +22,12 @@ export interface IOrder {
   totalAmount: number;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   scheduledDate: Date;
+  from: string;
+  to: string;
+  flightGate?: string;
+  flightNumber?: string;
+  pickUpDate: Date;
+  pickUpTime: string;
   completedAt?: Date;
   cancelledAt?: Date;
   rating?: IOrderRating;
@@ -104,6 +110,33 @@ const OrderSchema = new mongoose.Schema<IOrder>(
     scheduledDate: {
       type: Date,
       required: [true, 'Scheduled date is required']
+    },
+    from: {
+      type: String,
+      required: [true, 'From location is required'],
+      trim: true
+    },
+    to: {
+      type: String,
+      required: [true, 'To location is required'],
+      trim: true
+    },
+    flightGate: {
+      type: String,
+      trim: true
+    },
+    flightNumber: {
+      type: String,
+      trim: true
+    },
+    pickUpDate: {
+      type: Date,
+      required: [true, 'Pick up date is required']
+    },
+    pickUpTime: {
+      type: String,
+      required: [true, 'Pick up time is required'],
+      trim: true
     },
     completedAt: {
       type: Date

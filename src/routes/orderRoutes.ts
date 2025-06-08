@@ -67,6 +67,10 @@ router.use(protect);
  *         - items
  *         - totalAmount
  *         - scheduledDate
+ *         - from
+ *         - to
+ *         - pickUpDate
+ *         - pickUpTime
  *       properties:
  *         _id:
  *           type: string
@@ -102,6 +106,25 @@ router.use(protect);
  *           type: string
  *           format: date-time
  *           description: Scheduled date for the order
+ *         from:
+ *           type: string
+ *           description: Pickup location
+ *         to:
+ *           type: string
+ *           description: Delivery location
+ *         flightGate:
+ *           type: string
+ *           description: Flight gate number (optional)
+ *         flightNumber:
+ *           type: string
+ *           description: Flight number (optional)
+ *         pickUpDate:
+ *           type: string
+ *           format: date
+ *           description: Date of pickup
+ *         pickUpTime:
+ *           type: string
+ *           description: Time of pickup
  *         completedAt:
  *           type: string
  *           format: date-time
@@ -262,6 +285,10 @@ router.get('/:id', getOrder);
  *               - items
  *               - totalAmount
  *               - scheduledDate
+ *               - from
+ *               - to
+ *               - pickUpDate
+ *               - pickUpTime
  *             properties:
  *               items:
  *                 type: array
@@ -286,6 +313,25 @@ router.get('/:id', getOrder);
  *               scheduledDate:
  *                 type: string
  *                 format: date-time
+ *               from:
+ *                 type: string
+ *                 description: Pickup location
+ *               to:
+ *                 type: string
+ *                 description: Delivery location
+ *               flightGate:
+ *                 type: string
+ *                 description: Flight gate number (optional)
+ *               flightNumber:
+ *                 type: string
+ *                 description: Flight number (optional)
+ *               pickUpDate:
+ *                 type: string
+ *                 format: date
+ *                 description: Date of pickup
+ *               pickUpTime:
+ *                 type: string
+ *                 description: Time of pickup
  *               workerId:
  *                 type: string
  *               complaintId:
@@ -347,6 +393,32 @@ router.post(
     body('scheduledDate')
       .isISO8601()
       .withMessage('Scheduled date must be a valid date'),
+    body('from')
+      .notEmpty()
+      .withMessage('From location is required')
+      .isString()
+      .withMessage('From location must be a string'),
+    body('to')
+      .notEmpty()
+      .withMessage('To location is required')
+      .isString()
+      .withMessage('To location must be a string'),
+    body('flightGate')
+      .optional()
+      .isString()
+      .withMessage('Flight gate must be a string'),
+    body('flightNumber')
+      .optional()
+      .isString()
+      .withMessage('Flight number must be a string'),
+    body('pickUpDate')
+      .isISO8601()
+      .withMessage('Pick up date must be a valid date'),
+    body('pickUpTime')
+      .notEmpty()
+      .withMessage('Pick up time is required')
+      .isString()
+      .withMessage('Pick up time must be a string'),
     body('workerId')
       .optional()
       .isMongoId()
@@ -403,6 +475,25 @@ router.post(
  *                       type: array
  *                     isBreakable:
  *                       type: boolean
+ *               from:
+ *                 type: string
+ *                 description: Pickup location
+ *               to:
+ *                 type: string
+ *                 description: Delivery location
+ *               flightGate:
+ *                 type: string
+ *                 description: Flight gate number (optional)
+ *               flightNumber:
+ *                 type: string
+ *                 description: Flight number (optional)
+ *               pickUpDate:
+ *                 type: string
+ *                 format: date
+ *                 description: Date of pickup
+ *               pickUpTime:
+ *                 type: string
+ *                 description: Time of pickup
  *               rating:
  *                 type: object
  *                 properties:
@@ -489,20 +580,30 @@ router.put(
       .optional()
       .isBoolean()
       .withMessage('isBreakable must be a boolean'),
-    body('rating')
-      .optional()
-      .isObject()
-      .withMessage('Rating must be an object'),
-    body('rating.rating')
-      .optional()
-      .isInt({ min: 1, max: 5 })
-      .withMessage('Rating must be a number between 1 and 5'),
-    body('rating.comment')
+    body('from')
       .optional()
       .isString()
-      .trim()
-      .isLength({ max: 500 })
-      .withMessage('Comment cannot be more than 500 characters')
+      .withMessage('From location must be a string'),
+    body('to')
+      .optional()
+      .isString()
+      .withMessage('To location must be a string'),
+    body('flightGate')
+      .optional()
+      .isString()
+      .withMessage('Flight gate must be a string'),
+    body('flightNumber')
+      .optional()
+      .isString()
+      .withMessage('Flight number must be a string'),
+    body('pickUpDate')
+      .optional()
+      .isISO8601()
+      .withMessage('Pick up date must be a valid date'),
+    body('pickUpTime')
+      .optional()
+      .isString()
+      .withMessage('Pick up time must be a string')
   ],
   updateOrder
 );
