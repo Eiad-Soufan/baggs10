@@ -13,6 +13,9 @@ interface RegisterRequestBody {
   phone: string;
   password: string;
   identityNumber?: string;
+  preferredLang?: string;
+  region?: string;
+  timeFormat?: string;
 }
 
 interface LoginRequestBody {
@@ -81,6 +84,15 @@ interface RefreshTokenRequestBody {
  *                 format: password
  *               identityNumber:
  *                 type: string
+ *               preferredLang:
+ *                 type: string
+ *                 default: en
+ *               region:
+ *                 type: string
+ *               timeFormat:
+ *                 type: string
+ *                 enum: [12, 24]
+ *                 default: 24
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -104,9 +116,21 @@ router.post(
     body('phone').not().isEmpty().withMessage('Phone number is required'),
     body('password')
       .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters')
+      .withMessage('Password must be at least 6 characters'),
+    body('preferredLang')
+      .optional()
+      .isString()
+      .withMessage('Preferred language must be a string'),
+    body('region')
+      .optional()
+      .isString()
+      .withMessage('Region must be a string'),
+    body('timeFormat')
+      .optional()
+      .isIn(['12', '24'])
+      .withMessage('Time format must be either 12 or 24')
   ],
-  (req: Request<{}, {}, RegisterRequestBody>, res: Response, next: NextFunction) => {
+  (req: Request, res: Response, next: NextFunction) => {
     register(req, res, next);
   }
 );

@@ -9,7 +9,10 @@ export interface IUser {
   password: string;
   identityNumber?: string;
   isAvailable: boolean;
-  role: 'customer' | 'admin' ;
+  role: 'customer' | 'admin';
+  preferredLang?: string;
+  region?: string;
+  timeFormat: '12' | '24';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -60,6 +63,20 @@ const UserSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
       type: String,
       enum: ['customer', 'admin'],
       default: 'customer',
+    },
+    preferredLang: {
+      type: String,
+      default: 'en',
+      trim: true,
+    },
+    region: {
+      type: String,
+      trim: true,
+    },
+    timeFormat: {
+      type: String,
+      enum: ['12', '24'],
+      default: '24',
     },
   },
   {

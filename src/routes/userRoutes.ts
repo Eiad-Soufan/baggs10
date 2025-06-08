@@ -19,6 +19,69 @@ router.use(authorize('admin'));
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *         - phone
+ *         - password
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Auto-generated user ID
+ *         name:
+ *           type: string
+ *           description: User's full name
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: User's email address
+ *         phone:
+ *           type: string
+ *           description: User's phone number
+ *         password:
+ *           type: string
+ *           format: password
+ *           description: User's password (min 6 characters)
+ *         identityNumber:
+ *           type: string
+ *           description: User's identity number (optional)
+ *         isAvailable:
+ *           type: boolean
+ *           default: true
+ *           description: Whether the user is available
+ *         role:
+ *           type: string
+ *           enum: [customer, admin]
+ *           default: customer
+ *           description: User's role
+ *         preferredLang:
+ *           type: string
+ *           default: en
+ *           description: User's preferred language
+ *         region:
+ *           type: string
+ *           description: User's region (optional)
+ *         timeFormat:
+ *           type: string
+ *           enum: [12, 24]
+ *           default: 24
+ *           description: User's preferred time format
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Date when the user was created
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Date when the user was last updated
+ */
+
+/**
+ * @swagger
  * /api/v1/users:
  *   get:
  *     summary: Get all users
@@ -96,7 +159,16 @@ router.get('/:id', getUser);
  *                 type: boolean
  *               role:
  *                 type: string
- *                 enum: [user, admin]
+ *                 enum: [customer, admin]
+ *               preferredLang:
+ *                 type: string
+ *                 default: en
+ *               region:
+ *                 type: string
+ *               timeFormat:
+ *                 type: string
+ *                 enum: [12, 24]
+ *                 default: 24
  *     responses:
  *       201:
  *         description: User created successfully
@@ -115,7 +187,19 @@ router.post(
     body('phone').not().isEmpty().withMessage('Phone number is required'),
     body('password')
       .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters')
+      .withMessage('Password must be at least 6 characters'),
+    body('preferredLang')
+      .optional()
+      .isString()
+      .withMessage('Preferred language must be a string'),
+    body('region')
+      .optional()
+      .isString()
+      .withMessage('Region must be a string'),
+    body('timeFormat')
+      .optional()
+      .isIn(['12', '24'])
+      .withMessage('Time format must be either 12 or 24')
   ],
   createUser
 );
@@ -154,7 +238,16 @@ router.post(
  *                 type: boolean
  *               role:
  *                 type: string
- *                 enum: [user, admin]
+ *                 enum: [customer, admin]
+ *               preferredLang:
+ *                 type: string
+ *                 default: en
+ *               region:
+ *                 type: string
+ *               timeFormat:
+ *                 type: string
+ *                 enum: [12, 24]
+ *                 default: 24
  *     responses:
  *       200:
  *         description: User updated successfully
@@ -172,7 +265,19 @@ router.put(
   [
     body('email').optional().isEmail().withMessage('Please include a valid email'),
     body('phone').optional(),
-    body('name').optional()
+    body('name').optional(),
+    body('preferredLang')
+      .optional()
+      .isString()
+      .withMessage('Preferred language must be a string'),
+    body('region')
+      .optional()
+      .isString()
+      .withMessage('Region must be a string'),
+    body('timeFormat')
+      .optional()
+      .isIn(['12', '24'])
+      .withMessage('Time format must be either 12 or 24')
   ],
   updateUser
 );
