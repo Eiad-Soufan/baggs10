@@ -43,7 +43,7 @@ npm run dev
 
 ## API Documentation
 
-Access the Swagger documentation at `http://localhost:5000/api-docs` when the server is running.
+Access the Swagger documentation at `http://localhost:9091/api-docs` when the server is running.
 
 ## Testing
 
