@@ -93,6 +93,8 @@ interface RefreshTokenRequestBody {
  *                 type: string
  *                 enum: [12, 24]
  *                 default: 24
+ *               image:
+ *                 type: string
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -128,7 +130,11 @@ router.post(
     body('timeFormat')
       .optional()
       .isIn(['12', '24'])
-      .withMessage('Time format must be either 12 or 24')
+      .withMessage('Time format must be either 12 or 24'),
+    body('image')
+      .optional()
+      .isString()
+      .withMessage('Image must be a string')
   ],
   (req: Request, res: Response, next: NextFunction) => {
     register(req, res, next);

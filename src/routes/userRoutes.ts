@@ -70,6 +70,9 @@ router.use(authorize('admin'));
  *           enum: [12, 24]
  *           default: 24
  *           description: User's preferred time format
+ *         image:
+ *           type: string
+ *           description: URL of user's profile image (optional)
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -169,6 +172,8 @@ router.get('/:id', getUser);
  *                 type: string
  *                 enum: [12, 24]
  *                 default: 24
+ *               image:
+ *                 type: string
  *     responses:
  *       201:
  *         description: User created successfully
@@ -199,7 +204,11 @@ router.post(
     body('timeFormat')
       .optional()
       .isIn(['12', '24'])
-      .withMessage('Time format must be either 12 or 24')
+      .withMessage('Time format must be either 12 or 24'),
+    body('image')
+      .optional()
+      .isString()
+      .withMessage('Image must be a string')
   ],
   createUser
 );
@@ -248,6 +257,8 @@ router.post(
  *                 type: string
  *                 enum: [12, 24]
  *                 default: 24
+ *               image:
+ *                 type: string
  *     responses:
  *       200:
  *         description: User updated successfully
@@ -277,7 +288,11 @@ router.put(
     body('timeFormat')
       .optional()
       .isIn(['12', '24'])
-      .withMessage('Time format must be either 12 or 24')
+      .withMessage('Time format must be either 12 or 24'),
+    body('image')
+      .optional()
+      .isString()
+      .withMessage('Image must be a string')
   ],
   updateUser
 );

@@ -1,4 +1,4 @@
-import express, { Router } from 'express';
+import express, { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
 import {
   getWorkers,
@@ -66,7 +66,7 @@ router.get('/:id', getWorker);
  * @swagger
  * /api/v1/workers:
  *   post:
- *     summary: Create new worker
+ *     summary: Create a new worker
  *     tags: [Workers]
  *     security:
  *       - bearerAuth: []
@@ -81,6 +81,9 @@ router.get('/:id', getWorker);
  *               - email
  *               - phone
  *               - password
+ *               - experience
+ *               - timeFormat
+ *               - role
  *             properties:
  *               name:
  *                 type: string
@@ -90,16 +93,36 @@ router.get('/:id', getWorker);
  *                 type: string
  *               password:
  *                 type: string
- *               identityNumber:
+ *                 format: password
+ *               experience:
+ *                 type: number
+ *               preferredLang:
  *                 type: string
- *               isAvailable:
- *                 type: boolean
+ *                 default: en
+ *               region:
+ *                 type: string
+ *               timeFormat:
+ *                 type: string
+ *                 enum: [12, 24]
+ *                 default: 24
+ *               image:
+ *                 type: string
  *               role:
  *                 type: string
- *                 enum: [worker, admin]
+ *                 enum: [worker, manager, supervisor]
+ *                 default: worker
  *     responses:
  *       201:
  *         description: Worker created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Worker'
  *       400:
  *         description: Bad request
  *       401:
@@ -109,13 +132,36 @@ router.get('/:id', getWorker);
  */
 router.post(
   '/',
+  protect,
+  authorize('admin'),
   [
     body('name').not().isEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Please include a valid email'),
     body('phone').not().isEmpty().withMessage('Phone number is required'),
     body('password')
       .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters')
+      .withMessage('Password must be at least 6 characters'),
+    body('experience')
+      .isNumeric()
+      .withMessage('Experience must be a number'),
+    body('preferredLang')
+      .optional()
+      .isString()
+      .withMessage('Preferred language must be a string'),
+    body('region')
+      .optional()
+      .isString()
+      .withMessage('Region must be a string'),
+    body('timeFormat')
+      .isIn(['12', '24'])
+      .withMessage('Time format must be either 12 or 24'),
+    body('image')
+      .optional()
+      .isString()
+      .withMessage('Image must be a string'),
+    body('role')
+      .isIn(['worker', 'manager' , 'supervisor'])
+      .withMessage('Role must be either worker, manager or supervisor')
   ],
   createWorker
 );
@@ -124,17 +170,16 @@ router.post(
  * @swagger
  * /api/v1/workers/{id}:
  *   put:
- *     summary: Update worker
+ *     summary: Update a worker
  *     tags: [Workers]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
  *         schema:
  *           type: string
- *         required: true
- *         description: Worker id
  *     requestBody:
  *       required: true
  *       content:
@@ -148,31 +193,84 @@ router.post(
  *                 type: string
  *               phone:
  *                 type: string
- *               identityNumber:
+ *               experience:
+ *                 type: number
+ *               preferredLang:
  *                 type: string
- *               isAvailable:
- *                 type: boolean
+ *               region:
+ *                 type: string
+ *               timeFormat:
+ *                 type: string
+ *                 enum: [12, 24]
+ *               image:
+ *                 type: string
  *               role:
  *                 type: string
- *                 enum: [worker, admin]
+ *                 enum: [worker,manager,supervisor]
  *     responses:
  *       200:
  *         description: Worker updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Worker'
  *       400:
  *         description: Bad request
- *       404:
- *         description: Worker not found
  *       401:
  *         description: Not authorized
  *       403:
  *         description: Forbidden
+ *       404:
+ *         description: Worker not found
  */
 router.put(
   '/:id',
+  protect,
+  authorize('admin'),
   [
-    body('email').optional().isEmail().withMessage('Please include a valid email'),
-    body('phone').optional(),
-    body('name').optional()
+    body('email')
+      .optional()
+      .isEmail()
+      .withMessage('Please include a valid email'),
+    body('phone')
+      .optional()
+      .not()
+      .isEmpty()
+      .withMessage('Phone number is required'),
+    body('name')
+      .optional()
+      .not()
+      .isEmpty()
+      .withMessage('Name is required'),
+    body('experience')
+      .optional()
+      .isNumeric()
+      .withMessage('Experience must be a number'),
+    body('preferredLang')
+      .optional()
+      .isString()
+      .withMessage('Preferred language must be a string'),
+    body('region')
+      .optional()
+      .isString()
+      .withMessage('Region must be a string'),
+    body('timeFormat')
+      .optional()
+      .isIn(['12', '24'])
+      .withMessage('Time format must be either 12 or 24'),
+    body('image')
+      .optional()
+      .isString()
+      .withMessage('Image must be a string'),
+    body('role')
+      .optional()
+      .isIn(['worker', 'manager' , 'supervisor'])
+      .withMessage('Role must be either worker, manager or supervisor')
   ],
   updateWorker
 );
@@ -202,6 +300,6 @@ router.put(
  *       403:
  *         description: Forbidden
  */
-router.delete('/:id', deleteWorker);
+router.delete('/:id', protect, authorize('admin'), deleteWorker);
 
 export default router; 

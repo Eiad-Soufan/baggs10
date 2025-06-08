@@ -13,6 +13,7 @@ export interface IUser {
   preferredLang?: string;
   region?: string;
   timeFormat: '12' | '24';
+  image?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -77,6 +78,11 @@ const UserSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
       type: String,
       enum: ['12', '24'],
       default: '24',
+    },
+    image: {
+      type: String,
+      trim: true,
+      default: '',
     },
   },
   {

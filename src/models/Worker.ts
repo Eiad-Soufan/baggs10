@@ -24,6 +24,10 @@ export interface IWorker {
   certificates?: string[];
   experience: number;
   serviceRatings: IServiceRating[];
+  preferredLang?: string;
+  region?: string;
+  timeFormat: '12' | '24';
+  image?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -127,7 +131,26 @@ const WorkerSchema = new mongoose.Schema<IWorker, WorkerModel, IWorkerMethods>(
       default: 0,
       min: 0
     },
-    serviceRatings: [ServiceRatingSchema]
+    serviceRatings: [ServiceRatingSchema],
+    preferredLang: {
+      type: String,
+      default: 'en',
+      trim: true,
+    },
+    region: {
+      type: String,
+      trim: true,
+    },
+    timeFormat: {
+      type: String,
+      enum: ['12', '24'],
+      default: '24',
+    },
+    image: {
+      type: String,
+      trim: true,
+      default: ""
+    },
   },
   {
     timestamps: true,
