@@ -12,6 +12,7 @@ import workerRoutes from './routes/workerRoutes';
 import complaintRoutes from './routes/complaintRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import orderRoutes from './routes/orderRoutes';
+import adRoutes from './routes/adRoutes';
 import { connectDB } from './config/db';
 import { initializeSocket } from './config/socket';
 
@@ -69,6 +70,7 @@ app.use('/api/v1/workers', workerRoutes);
 app.use('/api/v1/complaints', complaintRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/ads', adRoutes); 
 
 // Set up Swagger docs with custom options
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
