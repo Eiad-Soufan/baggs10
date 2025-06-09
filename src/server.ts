@@ -105,6 +105,7 @@ app.get('/', (req: Request, res: Response) => {
 app.use(errorHandler);
 
 // Function to check and create admin user if none exists
+//TODO add env
 const checkAndCreateAdmin = async () => {
   try {
     const adminExists = await User.findOne({ role: 'admin' });
