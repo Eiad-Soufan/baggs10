@@ -9,11 +9,17 @@ export interface IUser {
   password: string;
   identityNumber?: string;
   isAvailable: boolean;
-  role: 'customer' | 'admin';
+  role: 'admin' | 'customer' | 'worker';
   preferredLang?: string;
   region?: string;
   timeFormat: '12' | '24';
   image?: string;
+  // Worker specific fields
+  specialization?: string;
+  rating?: number;
+  totalOrders?: number;
+  // Customer specific fields
+  address?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -62,7 +68,7 @@ const UserSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
     },
     role: {
       type: String,
-      enum: ['customer', 'admin'],
+      enum: ['admin', 'customer', 'worker'],
       default: 'customer',
     },
     preferredLang: {
@@ -83,6 +89,26 @@ const UserSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
       type: String,
       trim: true,
       default: '',
+    },
+    // Worker specific fields
+    specialization: {
+      type: String,
+      trim: true,
+    },
+    rating: {
+      type: Number,
+      min: 0,
+      max: 5,
+      default: 0,
+    },
+    totalOrders: {
+      type: Number,
+      default: 0,
+    },
+    // Customer specific fields
+    address: {
+      type: String,
+      trim: true,
     },
   },
   {

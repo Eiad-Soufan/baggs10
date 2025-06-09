@@ -10,6 +10,9 @@ interface RegisterRequestBody {
   phone: string;
   password: string;
   identityNumber?: string;
+  role?: 'admin' | 'customer' | 'worker';
+  specialization?: string;
+  address?: string;
 }
 
 interface LoginRequestBody {
@@ -41,7 +44,7 @@ export const register = async (
       return;
     }
 
-    const { name, email, phone, password, identityNumber } = req.body;
+    const { name, email, phone, password, identityNumber, role, specialization, address } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -56,7 +59,10 @@ export const register = async (
       email,
       phone,
       password,
-      identityNumber
+      identityNumber,
+      role: role || 'customer',
+      specialization,
+      address
     });
 
     sendTokenResponse(user, 201, res);
@@ -166,15 +172,15 @@ const sendTokenResponse = (user: IUser, statusCode: number, res: Response): void
 const generateToken = (user: IUser, type: 'access' | 'refresh'): string => {
   let expiresIn: number;
 
-    if (type === 'access') {
-      expiresIn = process.env.JWT_EXPIRE ? parseInt(process.env.JWT_EXPIRE) : 3600;
-    } else {
-      expiresIn = process.env.JWT_REFRESH_EXPIRE ? parseInt(process.env.JWT_REFRESH_EXPIRE) : 604800;
-    }
+  if (type === 'access') {
+    expiresIn = process.env.JWT_EXPIRE ? parseInt(process.env.JWT_EXPIRE) : 3600;
+  } else {
+    expiresIn = process.env.JWT_REFRESH_EXPIRE ? parseInt(process.env.JWT_REFRESH_EXPIRE) : 604800;
+  }
 
-const options: SignOptions = {
-  expiresIn
-};
+  const options: SignOptions = {
+    expiresIn
+  };
 
   return jwt.sign(
     { id: user._id },

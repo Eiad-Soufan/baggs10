@@ -29,8 +29,8 @@ const createAdmin = async (): Promise<void> => {
     // Admin data - you should change these values when running the script
     const adminData: AdminData = {
       name: process.argv[2] || 'Raouf satto',
-      email: process.argv[3] || 'admin@gmail.com',
-      phone: process.argv[4] || '+1234567890',
+      email: process.argv[3] || 'raoufsato999@gmail.com',
+      phone: process.argv[4] || '+5395272334',
       password: process.argv[5] || 'Admin',
       identityNumber: process.argv[6] || '1234567890',
       role: 'admin',
