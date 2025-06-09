@@ -16,8 +16,7 @@ import adRoutes from './routes/adRoutes';
 import { connectDB } from './config/db';
 import { initializeSocket } from './config/socket';
 
-// Import models
-import './models/Service';
+import User from './models/User';
 
 // Swagger documentation
 import swaggerSpec from './config/swagger';
@@ -105,11 +104,35 @@ app.get('/', (req: Request, res: Response) => {
 // Error handler middleware (should be last)
 app.use(errorHandler);
 
+// Function to check and create admin user if none exists
+const checkAndCreateAdmin = async () => {
+  try {
+    const adminExists = await User.findOne({ role: 'admin' });
+    if (!adminExists) {
+      await User.create({
+        name: 'admin user',
+        email: 'admin@gmail.com',
+        phone: '+5395272334',
+        password: '123456',
+        identityNumber: '1234567890',
+        role: 'admin',
+        isAvailable: true
+      });
+      console.log('Admin user created successfully');
+    }
+  } catch (error) {
+    console.error('Error creating admin user:', error);
+  }
+};
+
 // Connect to database and start server only if not in serverless environment
 if (process.env.NODE_ENV !== 'production') {
   const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
   
-  connectDB().then(() => {
+  connectDB().then(async () => {
+    // Check and create admin user after database connection
+    await checkAndCreateAdmin();
+    
     httpServer.listen(PORT, () => {
       console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
     });
