@@ -83,7 +83,7 @@ app.get('/', (req, res) => {
 app.use(error_1.default);
 // Connect to database and start server only if not in serverless environment
 if (process.env.NODE_ENV !== 'production') {
-    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
+    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 9091;
     (0, db_1.connectDB)().then(() => {
         app.listen(PORT, () => {
             console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
