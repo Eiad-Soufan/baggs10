@@ -20,7 +20,7 @@ const options = {
         servers: [
             {
                 url: process.env.NODE_ENV === 'production'
-                    ? 'https://baggs-competition-api-ha9w.vercel.app'
+                    ? 'https://baggs5.onrender.com'
                     : 'http://localhost:9091',
                 description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
             },

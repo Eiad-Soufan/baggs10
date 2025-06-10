@@ -5,7 +5,7 @@ const options: swaggerJsDoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Baggs Competition API',
+      title: 'Baggags Competition API',
       version: '1.0.0',
       description: 'API for managing users with authentication and role-based access control',
       contact: {
@@ -15,9 +15,9 @@ const options: swaggerJsDoc.Options = {
     },
     servers: [
       {
-        url: process.env.NODE_ENV === 'production' 
-          ? 'https://baggs-competition-api-ha9w.vercel.app'
-          : 'http://localhost:9091',
+        url: process.env.NODE_ENV === 'production'
+        ? 'https://baggs5.onrender.com/api/v1'
+        : 'http://localhost:9091/api/v1',
         description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
     ],
