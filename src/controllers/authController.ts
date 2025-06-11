@@ -46,6 +46,12 @@ export const register = async (
 
     const { name, email, phone, password, identityNumber, role, specialization, address } = req.body;
 
+    // Prevent worker registration through this endpoint
+    if (role === 'worker') {
+      next(new ErrorResponse('Worker accounts can only be created by administrators', 403));
+      return;
+    }
+
     // Check if user exists
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -53,14 +59,14 @@ export const register = async (
       return;
     }
 
-    // Create user
+    // Create user - allow admin or customer role, default to customer
     const user = await User.create({
       name,
       email,
       phone,
       password,
       identityNumber,
-      role: role || 'customer',
+      role: role === 'admin' ? 'admin' : 'customer', // Allow admin role if specified, otherwise default to customer
       specialization,
       address
     });
