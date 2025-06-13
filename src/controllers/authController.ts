@@ -130,10 +130,17 @@ export const getMe = async (
 ): Promise<void> => {
   try {
     const user = await User.findById(req.user?._id);
-    
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+    // Ensure informationPreference is present
     res.status(200).json({
       success: true,
-      data: user
+      data: {
+        ...user.toObject(),
+        informationPreference: user.informationPreference || ['email']
+      }
     });
   } catch (err) {
     next(err);

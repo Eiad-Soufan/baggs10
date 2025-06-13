@@ -147,6 +147,7 @@ router.get('/:id', getUser);
  *               - email
  *               - phone
  *               - password
+ *               - informationPreference
  *             properties:
  *               name:
  *                 type: string
@@ -174,6 +175,11 @@ router.get('/:id', getUser);
  *                 default: 24
  *               image:
  *                 type: string
+ *               informationPreference:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [email, sms, call]
  *     responses:
  *       201:
  *         description: User created successfully
@@ -190,6 +196,7 @@ router.post(
     body('name').not().isEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Please include a valid email'),
     body('phone').not().isEmpty().withMessage('Phone number is required'),
+    body('informationPreference').not().isEmpty().isArray().withMessage('informationPreference is required, and must be an array of strings [email, sms, call]'),
     body('password')
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters'),
