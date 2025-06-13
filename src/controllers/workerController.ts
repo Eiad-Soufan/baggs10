@@ -118,8 +118,6 @@ export const getWorkers = async (
       };
     }
 
-
-
     // Execute query with pagination and sorting
     const workers = await Workers.find(query)
       .sort({ [sortBy as string]: order === 'desc' ? -1 : 1 })

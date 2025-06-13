@@ -306,6 +306,9 @@ router.get('/:id', getTransfer);
  *                       type: number
  *                     images:
  *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: Array of image URLs (required)
  *                     isBreakable:
  *                       type: boolean
  *               totalAmount:

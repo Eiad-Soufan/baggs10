@@ -3,12 +3,12 @@ import { Request, Response, NextFunction } from 'express-serve-static-core';
 import { body } from 'express-validator';
 import { register, login, getMe, logout, refreshToken } from '../controllers/authController';
 import { protect } from '../middleware/auth';
-import { authLimiter } from '../middleware/rateLimiter';
+// import { authLimiter } from '../middleware/rateLimiter';
 
 const router = express.Router();
 
 // Apply rate limiter to all auth routes
-router.use(authLimiter);
+// router.use(authLimiter);
 
 // Define request body types
 interface RegisterRequestBody {

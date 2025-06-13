@@ -23,7 +23,7 @@ import swaggerSpec from './config/swagger';
 
 // Error handler middleware
 import errorHandler from './middleware/error';
-import { apiLimiter } from './middleware/rateLimiter';
+// import { apiLimiter } from './middleware/rateLimiter';
 
 // Load env vars
 dotenv.config();
@@ -64,8 +64,8 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 
-// Apply rate limiting to all routes
-app.use(apiLimiter);
+//INFO Apply rate limiting to all routes
+// app.use(apiLimiter);
 // Mount routers
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
