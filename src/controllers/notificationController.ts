@@ -32,6 +32,9 @@ export const getNotifications = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
     const { type, page = '1', limit = '10', search } = req.query;
 
     // Build query
@@ -171,6 +174,9 @@ export const createNotification = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       errorResponse(res, STATUS_CODES.VALIDATION_ERROR, 'Validation error', errors.array());
@@ -245,6 +251,9 @@ export const updateNotification = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
     let notification = await Notification.findById(req.params.id);
 
     if (!notification) {
@@ -285,6 +294,9 @@ export const deleteNotification = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  if (!req.user || req.user.role !== 'admin') {
+    return next(new ErrorResponse('Not authorized to access this route', 401));
+  }
   try {
     const notification = await Notification.findById(req.params.id);
 

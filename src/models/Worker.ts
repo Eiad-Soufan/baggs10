@@ -93,6 +93,7 @@ const WorkerSchema = new mongoose.Schema<IWorker, WorkerModel, IWorkerMethods>(
       unique: true,
       sparse: true,
       trim: true,
+      required: [true, 'Identity Number is required'],
     },
     isAvailable: {
       type: Boolean,
@@ -105,7 +106,6 @@ const WorkerSchema = new mongoose.Schema<IWorker, WorkerModel, IWorkerMethods>(
     },
     specialization: {
       type: String,
-      required: [true, 'Specialization is required'],
       trim: true
     },
     rating: {

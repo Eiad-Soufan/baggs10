@@ -14,8 +14,8 @@ const router: Router = express.Router();
 
 // Apply protection to all routes
 router.use(protect);
-// Apply admin authorization to all routes
-router.use(authorize('admin'));
+// Remove global admin authorization for all routes
+// router.use(authorize('admin'));
 
 /**
  * @swagger
@@ -33,7 +33,7 @@ router.use(authorize('admin'));
  *       403:
  *         description: Forbidden
  */
-router.get('/', getWorkers);
+router.get('/',authorize('admin'), getWorkers);
 
 /**
  * @swagger
@@ -210,28 +210,17 @@ router.post(
  *     responses:
  *       200:
  *         description: Worker updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/Worker'
  *       400:
  *         description: Bad request
  *       401:
  *         description: Not authorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden. Only admin or the worker themselves can update.
  *       404:
  *         description: Worker not found
  */
 router.put(
   '/:id',
-  protect,
-  authorize('admin'),
   [
     body('email')
       .optional()
@@ -298,8 +287,8 @@ router.put(
  *       401:
  *         description: Not authorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden. Only admin or the worker themselves can delete.
  */
-router.delete('/:id', protect, authorize('admin'), deleteWorker);
+router.delete('/:id', deleteWorker);
 
 export default router; 

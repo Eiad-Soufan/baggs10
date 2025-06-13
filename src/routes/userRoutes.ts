@@ -14,8 +14,8 @@ const router = express.Router();
 
 // Apply protection to all routes
 router.use(protect);
-// Apply admin authorization to all routes
-router.use(authorize('admin'));
+// Remove global admin authorization for all routes
+// router.use(authorize('admin'));
 
 /**
  * @swagger
@@ -99,7 +99,7 @@ router.use(authorize('admin'));
  *       403:
  *         description: Forbidden
  */
-router.get('/', getUsers);
+router.get('/',authorize('admin'), getUsers);
 
 /**
  * @swagger
@@ -269,7 +269,7 @@ router.post(
  *       401:
  *         description: Not authorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden. Only admin or the user themselves can update.
  */
 router.put(
   '/:id',
@@ -320,7 +320,7 @@ router.put(
  *       401:
  *         description: Not authorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden. Only admin or the user themselves can delete.
  */
 router.delete('/:id', deleteUser);
 

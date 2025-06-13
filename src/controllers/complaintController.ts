@@ -5,6 +5,7 @@ import Order from '../models/Order';
 import { successResponse, errorResponse, STATUS_CODES } from '../utils/responseHandler';
 import { Types } from 'mongoose';
 import { IUser } from '../models/User';
+import ErrorResponse from '../utils/errorResponse';
 
 // Define complaint status enum
 const ComplaintStatus = {
@@ -109,6 +110,9 @@ export const getComplaints = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
     const { 
       status,
       priority,
@@ -373,6 +377,9 @@ export const updateComplaint = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
   try {
     let complaint = await Complaint.findById(req.params.id);
 
@@ -419,6 +426,9 @@ export const deleteComplaint = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
     const complaint = await Complaint.findById(req.params.id);
 
     if (!complaint) {

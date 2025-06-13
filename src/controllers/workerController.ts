@@ -50,6 +50,10 @@ export const getWorkers = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Only admin can access this route
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 403));
+    }
     // Extract query parameters
     const { 
       name, 
@@ -114,6 +118,8 @@ export const getWorkers = async (
       };
     }
 
+
+
     // Execute query with pagination and sorting
     const workers = await Workers.find(query)
       .sort({ [sortBy as string]: order === 'desc' ? -1 : 1 })
@@ -143,6 +149,10 @@ export const getWorker = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Only admin or the worker themselves can view
+    if (!req.user || (req.user.role !== 'admin' && req.user._id.toString() !== req.params.id)) {
+      return next(new ErrorResponse('Not authorized to update this worker', 403));
+    }
     const worker = await Workers.findById(req.params.id);
     
     if (!worker) {
@@ -150,6 +160,7 @@ export const getWorker = async (
         new ErrorResponse(`Worker not found with id of ${req.params.id}`, 404)
       );
     }
+
     
     res.status(200).json({
       success: true,
@@ -171,6 +182,10 @@ export const createWorker = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Only admin can access this route
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 403));
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
@@ -199,30 +214,28 @@ export const updateWorker = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Only admin or the worker themselves can update
+    if (!req.user || (req.user.role !== 'admin' && req.user._id.toString() !== req.params.id)) {
+      return next(new ErrorResponse('Not authorized to update this worker', 403));
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
       return;
     }
-    
     let worker = await Workers.findById(req.params.id);
-    
     if (!worker) {
       return next(
         new ErrorResponse(`Worker not found with id of ${req.params.id}`, 404)
       );
     }
-    
-    // If password is in the body, remove it
     if (req.body.password) {
       delete req.body.password;
     }
-    
     worker = await Workers.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
     });
-    
     res.status(200).json({
       success: true,
       data: worker
@@ -243,16 +256,17 @@ export const deleteWorker = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Only admin or the worker themselves can delete
+    if (!req.user || (req.user.role !== 'admin' && req.user._id.toString() !== req.params.id)) {
+      return next(new ErrorResponse('Not authorized to delete this worker', 403));
+    }
     const worker = await Workers.findById(req.params.id) as WorkerDocument;
-    
     if (!worker) {
       return next(
         new ErrorResponse(`Worker not found with id of ${req.params.id}`, 404)
       );
     }
-    
     await worker.deleteOne();
-    
     res.status(200).json({
       success: true,
       data: {}
