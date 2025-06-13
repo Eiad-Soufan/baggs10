@@ -84,10 +84,13 @@ router.get('/:id', getWorker);
  *               - experience
  *               - timeFormat
  *               - role
+ *               - identityNumber
  *             properties:
  *               name:
  *                 type: string
  *               email:
+ *                 type: string
+ *               identityNumber:
  *                 type: string
  *               phone:
  *                 type: string
@@ -136,6 +139,7 @@ router.post(
   authorize('admin'),
   [
     body('name').not().isEmpty().withMessage('Name is required'),
+    body('identityNumber').not().isEmpty().withMessage('Identity Number is required'),
     body('email').isEmail().withMessage('Please include a valid email'),
     body('phone').not().isEmpty().withMessage('Phone number is required'),
     body('password')
@@ -161,7 +165,8 @@ router.post(
       .withMessage('Image must be a string'),
     body('role')
       .isIn(['worker', 'manager' , 'supervisor'])
-      .withMessage('Role must be either worker, manager or supervisor')
+      .withMessage('Role must be either worker, manager or supervisor'),
+    
   ],
   createWorker
 );
