@@ -1,23 +1,23 @@
 import mongoose, { Types } from 'mongoose';
 
-export interface IOrderItem {
+export interface ITransferItem {
   name: string;
   weight: number;
   images: string[];
   isBreakable: boolean;
 }
 
-export interface IOrderRating {
+export interface ITransferRating {
   rating: number;
   comment?: string;
   createdAt: Date;
 }
 
-export interface IOrder {
+export interface ITransfer {
   userId: Types.ObjectId;
   workerId?: Types.ObjectId;
   complaintId?: Types.ObjectId;
-  items: IOrderItem[];
+  items: ITransferItem[];
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   totalAmount: number;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
@@ -30,12 +30,12 @@ export interface IOrder {
   pickUpTime: string;
   completedAt?: Date;
   cancelledAt?: Date;
-  rating?: IOrderRating;
+  rating?: ITransferRating;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const OrderItemSchema = new mongoose.Schema<IOrderItem>({
+const TransferItemSchema = new mongoose.Schema<ITransferItem>({
   name: {
     type: String,
     required: [true, 'Item name is required'],
@@ -49,7 +49,9 @@ const OrderItemSchema = new mongoose.Schema<IOrderItem>({
   },
   images: [{
     type: String,
-    required: [true, 'At least one image is required'],
+    required: [true, '3 image is required'],
+    min: [3, '3 images are required'],
+    max: [3, '3 images are required'],
     trim: true
   }],
   isBreakable: {
@@ -58,7 +60,7 @@ const OrderItemSchema = new mongoose.Schema<IOrderItem>({
   }
 });
 
-const OrderRatingSchema = new mongoose.Schema<IOrderRating>({
+const TransferRatingSchema = new mongoose.Schema<ITransferRating>({
   rating: {
     type: Number,
     required: [true, 'Rating is required'],
@@ -76,7 +78,7 @@ const OrderRatingSchema = new mongoose.Schema<IOrderRating>({
   }
 });
 
-const OrderSchema = new mongoose.Schema<IOrder>(
+const TransferSchema = new mongoose.Schema<ITransfer>(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -91,7 +93,7 @@ const OrderSchema = new mongoose.Schema<IOrder>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Complaint'
     },
-    items: [OrderItemSchema],
+    items: [TransferItemSchema],
     status: {
       type: String,
       enum: ['pending', 'in_progress', 'completed', 'cancelled'],
@@ -144,7 +146,7 @@ const OrderSchema = new mongoose.Schema<IOrder>(
     cancelledAt: {
       type: Date
     },
-    rating: OrderRatingSchema
+    rating: TransferRatingSchema
   },
   {
     timestamps: true
@@ -152,13 +154,13 @@ const OrderSchema = new mongoose.Schema<IOrder>(
 );
 
 // Add indexes for better query performance
-OrderSchema.index({ userId: 1 });
-OrderSchema.index({ workerId: 1 });
-OrderSchema.index({ complaintId: 1 });
-OrderSchema.index({ status: 1 });
-OrderSchema.index({ paymentStatus: 1 });
-OrderSchema.index({ scheduledDate: 1 });
-OrderSchema.index({ createdAt: -1 });
+TransferSchema.index({ userId: 1 });
+TransferSchema.index({ workerId: 1 });
+TransferSchema.index({ complaintId: 1 });
+TransferSchema.index({ status: 1 });
+TransferSchema.index({ paymentStatus: 1 });
+TransferSchema.index({ scheduledDate: 1 });
+TransferSchema.index({ createdAt: -1 });
 
-const Order = mongoose.model<IOrder>('Order', OrderSchema);
-export default Order; 
+const Transfer = mongoose.model<ITransfer>('Transfer', TransferSchema);
+export default Transfer; 

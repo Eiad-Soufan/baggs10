@@ -17,7 +17,7 @@ export interface IUser {
   // Worker specific fields
   specialization?: string;
   rating?: number;
-  totalOrders?: number;
+  totalTransfers?: number;
   // Customer specific fields
   address?: string;
   createdAt: Date;
@@ -101,7 +101,7 @@ const UserSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
       max: 5,
       default: 0,
     },
-    totalOrders: {
+    totalTransfers: {
       type: Number,
       default: 0,
     },

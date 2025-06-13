@@ -15,7 +15,7 @@ export interface IComplaint {
   category: 'service' | 'worker' | 'payment' | 'technical' | 'other';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'pending' | 'in_progress' | 'resolved' | 'rejected' | 'closed';
-  orderId: Types.ObjectId;
+  transferId: Types.ObjectId;
   userId: Types.ObjectId;
   assignedToId?: Types.ObjectId;
   relatedWorkerId?: Types.ObjectId;
@@ -89,10 +89,10 @@ const ComplaintSchema = new mongoose.Schema<IComplaint>(
       enum: ['pending', 'in_progress', 'resolved', 'rejected', 'closed'],
       default: 'pending'
     },
-    orderId: {
+    transferId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: [true, 'Order ID is required'],
-      ref: 'Order'
+      required: [true, 'Transfer ID is required'],
+      ref: 'Transfer'
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -132,7 +132,7 @@ const ComplaintSchema = new mongoose.Schema<IComplaint>(
 
 // Add indexes for better query performance
 ComplaintSchema.index({ userId: 1, status: 1 });
-ComplaintSchema.index({ orderId: 1 });
+ComplaintSchema.index({ transferId: 1 });
 ComplaintSchema.index({ category: 1 });
 ComplaintSchema.index({ priority: 1 });
 ComplaintSchema.index({ status: 1 });

@@ -25,16 +25,16 @@ router.use(protect);
  *     Complaint:
  *       type: object
  *       required:
- *         - orderId
+ *         - transferId
  *         - reason
  *         - userId
  *       properties:
  *         _id:
  *           type: string
  *           description: Auto-generated complaint ID
- *         orderId:
+ *         transferId:
  *           type: string
- *           description: ID of the order related to complaint
+ *           description: ID of the transfer related to complaint
  *         userId:
  *           type: string
  *           description: ID of user who created the complaint
@@ -89,7 +89,7 @@ router.use(protect);
  *         schema:
  *           type: string
  *       - in: query
- *         name: order
+ *         name: transfer
  *         schema:
  *           type: string
  *           enum: [asc, desc]
@@ -188,7 +188,7 @@ router.get('/my-complaints', getMyComplaints);
  *                   properties:
  *                     complaintId:
  *                       type: string
- *                     orderId:
+ *                     transferId:
  *                       type: string
  *                     status:
  *                       type: string
@@ -227,10 +227,10 @@ router.get('/:id', getComplaint);
  *           schema:
  *             type: object
  *             required:
- *               - orderId
+ *               - transferId
  *               - reason
  *             properties:
- *               orderId:
+ *               transferId:
  *                 type: string
  *               reason:
  *                 type: string
@@ -277,11 +277,11 @@ router.post(
       .withMessage('Priority is required')
       .isIn(['low', 'medium', 'high', 'urgent'])
       .withMessage('Invalid priority'),
-    body('orderId')
+    body('transferId')
       .notEmpty()
-      .withMessage('Order ID is required')
+      .withMessage('Transfer ID is required')
       .isMongoId()
-      .withMessage('Invalid order ID'),
+      .withMessage('Invalid transfer ID'),
     body('attachments')
       .optional()
       .isArray()

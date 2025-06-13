@@ -1,14 +1,14 @@
 import express from 'express';
 import { body } from 'express-validator';
 import {
-  getOrders,
-  getOrder,
-  getMyOrders,
-  createOrder,
-  updateOrder,
-  deleteOrder,
-  addSampleOrders
-} from '../controllers/orderController';
+  getTransfers,
+  getTransfer,
+  getMyTransfers,
+  createTransfer,
+  updateTransfer,
+  deleteTransfer,
+  addSampleTransfers
+} from '../controllers/transferController';
 import { protect, authorize } from '../middleware/auth';
 
 const router = express.Router();
@@ -20,7 +20,7 @@ router.use(protect);
  * @swagger
  * components:
  *   schemas:
- *     OrderRating:
+ *     TransferRating:
  *       type: object
  *       required:
  *         - rating
@@ -33,12 +33,12 @@ router.use(protect);
  *         comment:
  *           type: string
  *           maxLength: 500
- *           description: Optional comment about the order
+ *           description: Optional comment about the transfer
  *         createdAt:
  *           type: string
  *           format: date-time
  *           description: Date when the rating was created
- *     OrderItem:
+ *     TransferItem:
  *       type: object
  *       required:
  *         - name
@@ -60,7 +60,7 @@ router.use(protect);
  *         isBreakable:
  *           type: boolean
  *           description: Whether the item is breakable
- *     Order:
+ *     Transfer:
  *       type: object
  *       required:
  *         - userId
@@ -74,38 +74,38 @@ router.use(protect);
  *       properties:
  *         _id:
  *           type: string
- *           description: Auto-generated order ID
+ *           description: Auto-generated transfer ID
  *         userId:
  *           type: string
- *           description: ID of user who placed the order
+ *           description: ID of user who placed the transfer
  *         workerId:
  *           type: string
- *           description: ID of worker assigned to the order
+ *           description: ID of worker assigned to the transfer
  *         complaintId:
  *           type: string
  *           description: ID of associated complaint if any
  *         items:
  *           type: array
  *           items:
- *             $ref: '#/components/schemas/OrderItem'
- *           description: Array of items in the order
+ *             $ref: '#/components/schemas/TransferItem'
+ *           description: Array of items in the transfer
  *         status:
  *           type: string
  *           enum: [pending, in_progress, completed, cancelled]
  *           default: pending
- *           description: Current status of the order
+ *           description: Current status of the transfer
  *         totalAmount:
  *           type: number
- *           description: Total amount of the order
+ *           description: Total amount of the transfer
  *         paymentStatus:
  *           type: string
  *           enum: [pending, paid, failed, refunded]
  *           default: pending
- *           description: Payment status of the order
+ *           description: Payment status of the transfer
  *         scheduledDate:
  *           type: string
  *           format: date-time
- *           description: Scheduled date for the order
+ *           description: Scheduled date for the transfer
  *         from:
  *           type: string
  *           description: Pickup location
@@ -128,30 +128,30 @@ router.use(protect);
  *         completedAt:
  *           type: string
  *           format: date-time
- *           description: Date when the order was completed
+ *           description: Date when the transfer was completed
  *         cancelledAt:
  *           type: string
  *           format: date-time
- *           description: Date when the order was cancelled
+ *           description: Date when the transfer was cancelled
  *         rating:
- *           $ref: '#/components/schemas/OrderRating'
- *           description: Rating and feedback for the order
+ *           $ref: '#/components/schemas/TransferRating'
+ *           description: Rating and feedback for the transfer
  *         createdAt:
  *           type: string
  *           format: date-time
- *           description: Date when the order was created
+ *           description: Date when the transfer was created
  *         updatedAt:
  *           type: string
  *           format: date-time
- *           description: Date when the order was last updated
+ *           description: Date when the transfer was last updated
  */
 
 /**
  * @swagger
- * /api/v1/orders:
+ * /api/v1/transfers:
  *   get:
- *     summary: Get all orders (Admin only)
- *     tags: [Orders]
+ *     summary: Get all transfers (Admin only)
+ *     tags: [Transfers]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -170,7 +170,7 @@ router.use(protect);
  *         schema:
  *           type: string
  *       - in: query
- *         name: order
+ *         name: transfer
  *         schema:
  *           type: string
  *           enum: [asc, desc]
@@ -188,7 +188,7 @@ router.use(protect);
  *           type: string
  *     responses:
  *       200:
- *         description: List of all orders
+ *         description: List of all transfers
  *         content:
  *           application/json:
  *             schema:
@@ -199,25 +199,25 @@ router.use(protect);
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/Order'
+ *                     $ref: '#/components/schemas/Transfer'
  *       401:
  *         description: Not authorized
  *       403:
  *         description: Forbidden - Admin access required
  */
-router.get('/', authorize('admin'), getOrders);
+router.get('/', authorize('admin'), getTransfers);
 
 /**
  * @swagger
- * /api/v1/orders/my-orders:
+ * /api/v1/transfers/my-transfers:
  *   get:
- *     summary: Get user's orders
- *     tags: [Orders]
+ *     summary: Get user's transfers
+ *     tags: [Transfers]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of user's orders
+ *         description: List of user's transfers
  *         content:
  *           application/json:
  *             schema:
@@ -228,18 +228,18 @@ router.get('/', authorize('admin'), getOrders);
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/Order'
+ *                     $ref: '#/components/schemas/Transfer'
  *       401:
  *         description: Not authorized
  */
-router.get('/my-orders', getMyOrders);
+router.get('/my-transfers', getMyTransfers);
 
 /**
  * @swagger
- * /api/v1/orders/{id}:
+ * /api/v1/transfers/{id}:
  *   get:
- *     summary: Get single order
- *     tags: [Orders]
+ *     summary: Get single transfer
+ *     tags: [Transfers]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -250,7 +250,7 @@ router.get('/my-orders', getMyOrders);
  *           type: string
  *     responses:
  *       200:
- *         description: Order details
+ *         description: Transfer details
  *         content:
  *           application/json:
  *             schema:
@@ -259,20 +259,20 @@ router.get('/my-orders', getMyOrders);
  *                 success:
  *                   type: boolean
  *                 data:
- *                   $ref: '#/components/schemas/Order'
+ *                   $ref: '#/components/schemas/Transfer'
  *       401:
  *         description: Not authorized
  *       404:
- *         description: Order not found
+ *         description: Transfer not found
  */
-router.get('/:id', getOrder);
+router.get('/:id', getTransfer);
 
 /**
  * @swagger
- * /api/v1/orders:
+ * /api/v1/transfers:
  *   post:
- *     summary: Create new order
- *     tags: [Orders]
+ *     summary: Create new transfer
+ *     tags: [Transfers]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -338,7 +338,7 @@ router.get('/:id', getOrder);
  *                 type: string
  *     responses:
  *       201:
- *         description: Order created successfully
+ *         description: Transfer created successfully
  *         content:
  *           application/json:
  *             schema:
@@ -347,7 +347,7 @@ router.get('/:id', getOrder);
  *                 success:
  *                   type: boolean
  *                 data:
- *                   $ref: '#/components/schemas/Order'
+ *                   $ref: '#/components/schemas/Transfer'
  *       400:
  *         description: Bad request
  *       401:
@@ -375,7 +375,7 @@ router.post(
       .isArray()
       .withMessage('Images must be an array')
       .notEmpty()
-      .withMessage('At least one image is required'),
+      .withMessage('3 image is required'),
     body('items.*.images.*')
       .isString()
       .withMessage('Image must be a string')
@@ -428,15 +428,15 @@ router.post(
       .isMongoId()
       .withMessage('Invalid complaint ID')
   ],
-  createOrder
+  createTransfer
 );
 
 /**
  * @swagger
- * /api/v1/orders/{id}:
+ * /api/v1/transfers/{id}:
  *   put:
- *     summary: Update order (Admin only)
- *     tags: [Orders]
+ *     summary: Update transfer (Admin only)
+ *     tags: [Transfers]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -506,7 +506,7 @@ router.post(
  *                     maxLength: 500
  *     responses:
  *       200:
- *         description: Order updated successfully
+ *         description: Transfer updated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -515,7 +515,7 @@ router.post(
  *                 success:
  *                   type: boolean
  *                 data:
- *                   $ref: '#/components/schemas/Order'
+ *                   $ref: '#/components/schemas/Transfer'
  *       400:
  *         description: Bad request
  *       401:
@@ -523,7 +523,7 @@ router.post(
  *       403:
  *         description: Forbidden - Admin access required
  *       404:
- *         description: Order not found
+ *         description: Transfer not found
  */
 router.put(
   '/:id',
@@ -546,31 +546,27 @@ router.put(
       .isMongoId()
       .withMessage('Invalid complaint ID'),
     body('items')
-      .optional()
       .isArray()
       .withMessage('Items must be an array')
       .notEmpty()
       .withMessage('At least one item is required'),
     body('items.*.name')
-      .optional()
       .notEmpty()
       .withMessage('Item name is required')
       .isLength({ max: 100 })
       .withMessage('Item name cannot be more than 100 characters'),
     body('items.*.weight')
-      .optional()
       .isNumeric()
-      .withMessage('Item weight must be a number')
+      .notEmpty()
+      .withMessage('Item name is required, Item weight must be a number')
       .isFloat({ min: 0 })
       .withMessage('Item weight cannot be negative'),
     body('items.*.images')
-      .optional()
       .isArray()
       .withMessage('Images must be an array')
       .notEmpty()
-      .withMessage('At least one image is required'),
+      .withMessage('3 image is required'),
     body('items.*.images.*')
-      .optional()
       .isString()
       .withMessage('Image must be a string')
       .trim()
@@ -605,15 +601,15 @@ router.put(
       .isString()
       .withMessage('Pick up time must be a string')
   ],
-  updateOrder
+  updateTransfer
 );
 
 /**
  * @swagger
- * /api/v1/orders/{id}:
+ * /api/v1/transfers/{id}:
  *   delete:
- *     summary: Delete order (Admin only)
- *     tags: [Orders]
+ *     summary: Delete transfer (Admin only)
+ *     tags: [Transfers]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -624,7 +620,7 @@ router.put(
  *           type: string
  *     responses:
  *       200:
- *         description: Order deleted successfully
+ *         description: Transfer deleted successfully
  *         content:
  *           application/json:
  *             schema:
@@ -639,21 +635,21 @@ router.put(
  *       403:
  *         description: Forbidden - Admin access required
  *       404:
- *         description: Order not found
+ *         description: Transfer not found
  */
-router.delete('/:id', authorize('admin'), deleteOrder);
+router.delete('/:id', authorize('admin'), deleteTransfer);
 
 /**
  * @swagger
- * /api/v1/orders/add-samples:
+ * /api/v1/transfers/add-samples:
  *   post:
- *     summary: Add sample orders (Admin only)
- *     tags: [Orders]
+ *     summary: Add sample transfers (Admin only)
+ *     tags: [Transfers]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       201:
- *         description: Sample orders created successfully
+ *         description: Sample transfers created successfully
  *         content:
  *           application/json:
  *             schema:
@@ -664,12 +660,12 @@ router.delete('/:id', authorize('admin'), deleteOrder);
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/Order'
+ *                     $ref: '#/components/schemas/Transfer'
  *       401:
  *         description: Not authorized
  *       403:
  *         description: Forbidden - Admin access required
  */
-router.post('/add-samples', authorize('admin'), addSampleOrders);
+router.post('/add-samples', authorize('admin'), addSampleTransfers);
 
 export default router; 
