@@ -5,7 +5,8 @@ import {
   getWorker,
   createWorker,
   updateWorker,
-  deleteWorker
+  deleteWorker,
+  getWorkersStats
 } from '../controllers/workerController';
 
 import { protect, authorize } from '../middleware/auth';
@@ -34,6 +35,41 @@ router.use(protect);
  *         description: Forbidden
  */
 router.get('/',authorize('admin'), getWorkers);
+
+/**
+ * @swagger
+ * /api/v1/workers/stats:
+ *   get:
+ *     summary: Get workers statistics
+ *     tags: [Workers]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Returns total workers, workers with transfers, and available workers. Admin only.
+ *     responses:
+ *       200:
+ *         description: Workers statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalWorkers:
+ *                       type: integer
+ *                     workersWithTransfers:
+ *                       type: integer
+ *                     availableWorkers:
+ *                       type: integer
+ *       401:
+ *         description: Not authorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/stats', authorize('admin'), getWorkersStats)
 
 /**
  * @swagger

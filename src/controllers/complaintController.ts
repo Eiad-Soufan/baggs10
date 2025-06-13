@@ -596,5 +596,38 @@ export const addSampleComplaints = async (
     );
   } catch (err) {
     next(err);
+  } 
+};
+
+/**
+ * @desc    Get complaints stats (Admin only)
+ * @route   GET /api/v1/complaints/stats
+ * @access  Private/Admin
+ */
+export const getComplaintsStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+    // Only admin can access this route
+    if (!req.user || (req.user.role !== 'admin')) {
+      return next(new ErrorResponse('Not authorized to access this route', 403));
+    }
+  try {
+    const totalComplaints = await Complaint.countDocuments({});
+    const openComplaints = await Complaint.countDocuments({
+      status: { $ne: ComplaintStatus.CLOSED }
+    })
+    const solvedComplaints = await Complaint.countDocuments({ status: ComplaintStatus.CLOSED })
+    res.status(200).json({
+      success: true,
+      data: {
+        totalComplaints,
+        openComplaints,
+        solvedComplaints
+      }
+    })
+  } catch (err) {
+    next(err)
   }
 }; 

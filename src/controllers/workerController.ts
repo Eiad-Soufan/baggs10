@@ -3,6 +3,7 @@ import { validationResult } from 'express-validator';
 import { Document } from 'mongoose';
 import Workers from '../models/Worker';
 import ErrorResponse from '../utils/errorResponse';
+import Transfers from '../models/Transfer';
 
 interface WorkerFilters {
   name?: { $regex: string; $options: string };
@@ -272,4 +273,40 @@ export const deleteWorker = async (
   } catch (err) {
     next(err);
   }
-}; 
+};
+
+/**
+ * @desc    Get workers statistics (total, with transfers, available)
+ * @route   GET /api/v1/workers/stats
+ * @access  Admin
+ */
+export const getWorkersStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+    // Only admin can access this route
+    if (!req.user || (req.user.role !== 'admin')) {
+      return next(new ErrorResponse('Not authorized to access this route', 403));
+    }
+  try {
+    // Total workers
+    const totalWorkers = await Workers.countDocuments({ role: 'worker' })
+    // Workers with transfers
+    const workersWithTransfers = await Transfers.countDocuments({
+      workerId: { $exists: true, $ne: null }
+    })
+    // Workers with status available (assuming isAvailable is true)
+    const availableWorkers = await Workers.countDocuments({ role: 'worker', isAvailable: true })
+    res.status(200).json({
+      success: true,
+      data: {
+        totalWorkers,
+        workersWithTransfers,
+        availableWorkers
+      }
+    })
+  } catch (err) {
+    next(err)
+  }
+} 

@@ -8,7 +8,8 @@ import {
   updateComplaint,
   deleteComplaint,
   addResponse,
-  addSampleComplaints
+  addSampleComplaints,
+  getComplaintsStats
 } from '../controllers/complaintController';
 
 import { protect, authorize } from '../middleware/auth';
@@ -132,6 +133,40 @@ router.get('/', authorize('admin'), getComplaints);
 
 /**
  * @swagger
+ * /api/v1/complaints/stats:
+ *   get:
+ *     summary: Get complaints stats (Admin only)
+ *     tags: [Complaints]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Complaints stats
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalComplaints:
+ *                       type: integer
+ *                     openComplaints:
+ *                       type: integer
+ *                     solvedComplaints:
+ *                       type: integer
+ *       401:
+ *         description: Not authorized
+ *       403:
+ *         description: Forbidden - Admin access required
+ */
+router.get('/stats', authorize('admin'), getComplaintsStats);
+
+/**
+* @swagger
  * /api/v1/complaints/my-complaints:
  *   get:
  *     summary: Get user's complaints

@@ -378,4 +378,72 @@ export const addSampleTransfers = async (
   } catch (err) {
     next(err);
   }
+};
+
+/**
+ * @desc    Get transfer statistics (today, current, cancelled, and percent change vs yesterday)
+ * @route   GET /api/v1/transfers/stats
+ * @access  Private/Admin
+ */
+export const getTransfersStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    // Today's transfers
+    const todaysTransfers = await Transfer.countDocuments({
+      createdAt: { $gte: today, $lt: tomorrow }
+    });
+    // Yesterday's transfers
+    const yesterdaysTransfers = await Transfer.countDocuments({
+      createdAt: { $gte: yesterday, $lt: today }
+    });
+    // Current transfers (not completed or cancelled)
+    const currentTransfers = await Transfer.countDocuments({
+      status: { $in: ['pending', 'in_progress'] }
+    });
+    // Current transfers yesterday
+    const currentTransfersYesterday = await Transfer.countDocuments({
+      status: { $in: ['pending', 'in_progress'] },
+      createdAt: { $gte: yesterday, $lt: today }
+    });
+    // Cancelled transfers today
+    const cancelledTransfers = await Transfer.countDocuments({
+      status: 'cancelled',
+      createdAt: { $gte: today, $lt: tomorrow }
+    });
+    // Cancelled transfers yesterday
+    const cancelledTransfersYesterday = await Transfer.countDocuments({
+      status: 'cancelled',
+      createdAt: { $gte: yesterday, $lt: today }
+    });
+
+    // Percent change helpers
+    function percentChange(todayVal: number, yesterdayVal: number): string {
+      if (yesterdayVal === 0) return todayVal === 0 ? '0%' : '100%';
+      return (((todayVal - yesterdayVal) / yesterdayVal) * 100).toFixed(2) + '%';
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        todaysTransfers,
+        todaysTransfersChange: percentChange(todaysTransfers, yesterdaysTransfers),
+        currentTransfers,
+        currentTransfersChange: percentChange(currentTransfers, currentTransfersYesterday),
+        cancelledTransfers,
+        cancelledTransfersChange: percentChange(cancelledTransfers, cancelledTransfersYesterday)
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
 }; 

@@ -7,7 +7,8 @@ import {
   createTransfer,
   updateTransfer,
   deleteTransfer,
-  addSampleTransfers
+  addSampleTransfers,
+  getTransfersStats
 } from '../controllers/transferController';
 import { protect, authorize } from '../middleware/auth';
 
@@ -233,6 +234,47 @@ router.get('/', authorize('admin'), getTransfers);
  *         description: Not authorized
  */
 router.get('/my-transfers', getMyTransfers);
+
+/**
+ * @swagger
+ * /api/v1/transfers/stats:
+ *   get:
+ *     summary: Get transfer statistics (today, current, cancelled, and percent change vs yesterday) admin only
+ *     tags: [Transfers]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Returns today's transfers, current transfers, cancelled transfers, and percent change vs yesterday. Admin only.
+ *     responses:
+ *       200:
+ *         description: Transfer statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     todaysTransfers:
+ *                       type: integer
+ *                     todaysTransfersChange:
+ *                       type: string
+ *                     currentTransfers:
+ *                       type: integer
+ *                     currentTransfersChange:
+ *                       type: string
+ *                     cancelledTransfers:
+ *                       type: integer
+ *                     cancelledTransfersChange:
+ *                       type: string
+ *       401:
+ *         description: Not authorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/stats', authorize('admin'), getTransfersStats)
 
 /**
  * @swagger
