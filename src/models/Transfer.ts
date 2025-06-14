@@ -4,10 +4,7 @@ export interface ITransferItem {
   name: string;
   weight: number;
   images: string[];
-  isBreakable: {
-    type: boolean;
-    default: false;
-  };
+  isBreakable: boolean;
 }
 
 export interface ITransferRating {
@@ -54,7 +51,6 @@ const TransferItemSchema = new mongoose.Schema<ITransferItem>({
     type: String,
     required: [true, '3 image is required'],
     min: [3, '3 images are required'],
-    max: [3, '3 images are required'],
     trim: true
   }],
   isBreakable: {

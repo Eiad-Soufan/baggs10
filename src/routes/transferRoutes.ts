@@ -1,16 +1,16 @@
-import express from 'express';
-import { body } from 'express-validator';
+import express from "express";
+import { body } from "express-validator";
 import {
-  getTransfers,
-  getTransfer,
-  getMyTransfers,
-  createTransfer,
-  updateTransfer,
-  deleteTransfer,
-  addSampleTransfers,
-  getTransfersStats
-} from '../controllers/transferController';
-import { protect, authorize } from '../middleware/auth';
+	getTransfers,
+	getTransfer,
+	getMyTransfers,
+	createTransfer,
+	updateTransfer,
+	deleteTransfer,
+	addSampleTransfers,
+	getTransfersStats,
+} from "../controllers/transferController";
+import { protect, authorize } from "../middleware/auth";
 
 const router = express.Router();
 
@@ -206,7 +206,7 @@ router.use(protect);
  *       403:
  *         description: Forbidden - Admin access required
  */
-router.get('/', authorize('admin'), getTransfers);
+router.get("/", authorize("admin"), getTransfers);
 
 /**
  * @swagger
@@ -233,7 +233,7 @@ router.get('/', authorize('admin'), getTransfers);
  *       401:
  *         description: Not authorized
  */
-router.get('/my-transfers', getMyTransfers);
+router.get("/my-transfers", getMyTransfers);
 
 /**
  * @swagger
@@ -274,7 +274,7 @@ router.get('/my-transfers', getMyTransfers);
  *       403:
  *         description: Forbidden
  */
-router.get('/stats', authorize('admin'), getTransfersStats)
+router.get("/stats", authorize("admin"), getTransfersStats);
 
 /**
  * @swagger
@@ -307,7 +307,7 @@ router.get('/stats', authorize('admin'), getTransfersStats)
  *       404:
  *         description: Transfer not found
  */
-router.get('/:id', getTransfer);
+router.get("/:id", getTransfer);
 
 /**
  * @swagger
@@ -399,81 +399,76 @@ router.get('/:id', getTransfer);
  *         description: Not authorized
  */
 router.post(
-  '/',
-  [
-    body('items')
-      .isArray()
-      .withMessage('Items must be an array')
-      .notEmpty()
-      .withMessage('At least one item is required'),
-    body('items.*.name')
-      .notEmpty()
-      .withMessage('Item name is required')
-      .isLength({ max: 100 })
-      .withMessage('Item name cannot be more than 100 characters'),
-    body('items.*.weight')
-      .isNumeric()
-      .withMessage('Item weight must be a number')
-      .isFloat({ min: 0 })
-      .withMessage('Item weight cannot be negative'),
-    body('items.*.images')
-      .isArray()
-      .withMessage('Images must be an array')
-      .notEmpty()
-      .withMessage('3 image is required'),
-    body('items.*.images.*')
-      .isString()
-      .withMessage('Image must be a string')
-      .trim()
-      .notEmpty()
-      .withMessage('Image URL cannot be empty'),
-    body('items.*.isBreakable')
-      .isBoolean()
-      .withMessage('isBreakable must be a boolean'),
-    body('totalAmount')
-      .isNumeric()
-      .withMessage('Total amount must be a number')
-      .isFloat({ min: 0 })
-      .withMessage('Total amount cannot be negative'),
-    body('scheduledDate')
-      .isISO8601()
-      .withMessage('Scheduled date must be a valid date'),
-    body('from')
-      .notEmpty()
-      .withMessage('From location is required')
-      .isString()
-      .withMessage('From location must be a string'),
-    body('to')
-      .notEmpty()
-      .withMessage('To location is required')
-      .isString()
-      .withMessage('To location must be a string'),
-    body('flightGate')
-      .optional()
-      .isString()
-      .withMessage('Flight gate must be a string'),
-    body('flightNumber')
-      .optional()
-      .isString()
-      .withMessage('Flight number must be a string'),
-    body('pickUpDate')
-      .isISO8601()
-      .withMessage('Pick up date must be a valid date'),
-    body('pickUpTime')
-      .notEmpty()
-      .withMessage('Pick up time is required')
-      .isString()
-      .withMessage('Pick up time must be a string'),
-    body('workerId')
-      .optional()
-      .isMongoId()
-      .withMessage('Invalid worker ID'),
-    body('complaintId')
-      .optional()
-      .isMongoId()
-      .withMessage('Invalid complaint ID')
-  ],
-  createTransfer
+	"/",
+	[
+		body("items")
+			.isArray()
+			.withMessage("Items must be an array")
+			.notEmpty()
+			.withMessage("At least one item is required"),
+		body("items.*.name")
+			.notEmpty()
+			.withMessage("Item name is required")
+			.isLength({ max: 100 })
+			.withMessage("Item name cannot be more than 100 characters"),
+		body("items.*.weight")
+			.isNumeric()
+			.withMessage("Item weight must be a number")
+			.isFloat({ min: 0 })
+			.withMessage("Item weight cannot be negative"),
+		body("items.*.images")
+			.isArray()
+			.notEmpty()
+			.withMessage("Images must be an array")
+			.withMessage("3 image is required"),
+		body("items.*.images.*")
+			.isString()
+			.withMessage("Image must be a string")
+			.trim()
+			.notEmpty()
+			.withMessage("Image URL cannot be empty"),
+		body("items.*.isBreakable").optional().isBoolean(),
+		body("totalAmount")
+			.isNumeric()
+			.withMessage("Total amount must be a number")
+			.isFloat({ min: 0 })
+			.withMessage("Total amount cannot be negative"),
+		body("scheduledDate")
+			.isISO8601()
+			.withMessage("Scheduled date must be a valid date"),
+		body("from")
+			.notEmpty()
+			.withMessage("From location is required")
+			.isString()
+			.withMessage("From location must be a string"),
+		body("to")
+			.notEmpty()
+			.withMessage("To location is required")
+			.isString()
+			.withMessage("To location must be a string"),
+		body("flightGate")
+			.optional()
+			.isString()
+			.withMessage("Flight gate must be a string"),
+		body("flightNumber")
+			.optional()
+			.isString()
+			.withMessage("Flight number must be a string"),
+		body("pickUpDate")
+			.isISO8601()
+			.withMessage("Pick up date must be a valid date"),
+		body("pickUpTime")
+			.notEmpty()
+			.withMessage("Pick up time is required")
+			.isString()
+			.withMessage("Pick up time must be a string"),
+		body("workerId").optional().isMongoId().withMessage("Invalid worker ID"),
+		body("complaintId")
+			.optional()
+			.isMongoId()
+			.withMessage("Invalid complaint ID"),
+	],
+	createTransfer
 );
 
 /**
@@ -571,82 +566,79 @@ router.post(
  *         description: Transfer not found
  */
 router.put(
-  '/:id',
-  authorize('admin'),
-  [
-    body('status')
-      .optional()
-      .isIn(['pending', 'in_progress', 'completed', 'cancelled'])
-      .withMessage('Invalid status'),
-    body('paymentStatus')
-      .optional()
-      .isIn(['pending', 'paid', 'failed', 'refunded'])
-      .withMessage('Invalid payment status'),
-    body('workerId')
-      .optional()
-      .isMongoId()
-      .withMessage('Invalid worker ID'),
-    body('complaintId')
-      .optional()
-      .isMongoId()
-      .withMessage('Invalid complaint ID'),
-    body('items')
-      .isArray()
-      .withMessage('Items must be an array')
-      .notEmpty()
-      .withMessage('At least one item is required'),
-    body('items.*.name')
-      .notEmpty()
-      .withMessage('Item name is required')
-      .isLength({ max: 100 })
-      .withMessage('Item name cannot be more than 100 characters'),
-    body('items.*.weight')
-      .isNumeric()
-      .notEmpty()
-      .withMessage('Item name is required, Item weight must be a number')
-      .isFloat({ min: 0 })
-      .withMessage('Item weight cannot be negative'),
-    body('items.*.images')
-      .isArray()
-      .withMessage('Images must be an array')
-      .notEmpty()
-      .withMessage('3 image is required'),
-    body('items.*.images.*')
-      .isString()
-      .withMessage('Image must be a string')
-      .trim()
-      .notEmpty()
-      .withMessage('Image URL cannot be empty'),
-    body('items.*.isBreakable')
-      .optional()
-      .isBoolean()
-      .withMessage('isBreakable must be a boolean'),
-    body('from')
-      .optional()
-      .isString()
-      .withMessage('From location must be a string'),
-    body('to')
-      .optional()
-      .isString()
-      .withMessage('To location must be a string'),
-    body('flightGate')
-      .optional()
-      .isString()
-      .withMessage('Flight gate must be a string'),
-    body('flightNumber')
-      .optional()
-      .isString()
-      .withMessage('Flight number must be a string'),
-    body('pickUpDate')
-      .optional()
-      .isISO8601()
-      .withMessage('Pick up date must be a valid date'),
-    body('pickUpTime')
-      .optional()
-      .isString()
-      .withMessage('Pick up time must be a string')
-  ],
-  updateTransfer
+	"/:id",
+	authorize("admin"),
+	[
+		body("status")
+			.optional()
+			.isIn(["pending", "in_progress", "completed", "cancelled"])
+			.withMessage("Invalid status"),
+		body("paymentStatus")
+			.optional()
+			.isIn(["pending", "paid", "failed", "refunded"])
+			.withMessage("Invalid payment status"),
+		body("workerId").optional().isMongoId().withMessage("Invalid worker ID"),
+		body("complaintId")
+			.optional()
+			.isMongoId()
+			.withMessage("Invalid complaint ID"),
+		body("items")
+			.isArray()
+			.withMessage("Items must be an array")
+			.notEmpty()
+			.withMessage("At least one item is required"),
+		body("items.*.name")
+			.notEmpty()
+			.withMessage("Item name is required")
+			.isLength({ max: 100 })
+			.withMessage("Item name cannot be more than 100 characters"),
+		body("items.*.weight")
+			.isNumeric()
+			.notEmpty()
+			.withMessage("Item name is required, Item weight must be a number")
+			.isFloat({ min: 0 })
+			.withMessage("Item weight cannot be negative"),
+		body("items.*.images")
+			.isArray()
+			.withMessage("Images must be an array")
+			.notEmpty()
+			.withMessage("3 image is required"),
+		body("items.*.images.*")
+			.isString()
+			.withMessage("Image must be a string")
+			.trim()
+			.notEmpty()
+			.withMessage("Image URL cannot be empty"),
+		body("items.*.isBreakable")
+			.optional()
+			.isBoolean()
+			.withMessage("isBreakable must be a boolean"),
+		body("from")
+			.optional()
+			.isString()
+			.withMessage("From location must be a string"),
+		body("to")
+			.optional()
+			.isString()
+			.withMessage("To location must be a string"),
+		body("flightGate")
+			.optional()
+			.isString()
+			.withMessage("Flight gate must be a string"),
+		body("flightNumber")
+			.optional()
+			.isString()
+			.withMessage("Flight number must be a string"),
+		body("pickUpDate")
+			.optional()
+			.isISO8601()
+			.withMessage("Pick up date must be a valid date"),
+		body("pickUpTime")
+			.optional()
+			.isString()
+			.withMessage("Pick up time must be a string"),
+	],
+	updateTransfer
 );
 
 /**
@@ -682,7 +674,7 @@ router.put(
  *       404:
  *         description: Transfer not found
  */
-router.delete('/:id', authorize('admin'), deleteTransfer);
+router.delete("/:id", authorize("admin"), deleteTransfer);
 
 /**
  * @swagger
@@ -711,6 +703,6 @@ router.delete('/:id', authorize('admin'), deleteTransfer);
  *       403:
  *         description: Forbidden - Admin access required
  */
-router.post('/add-samples', authorize('admin'), addSampleTransfers);
+router.post("/add-samples", authorize("admin"), addSampleTransfers);
 
-export default router; 
+export default router;

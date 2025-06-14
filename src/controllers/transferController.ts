@@ -167,7 +167,7 @@ export const createTransfer = async (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> => {
+): Promise<any> => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -175,7 +175,24 @@ export const createTransfer = async (
       return;
     }
 
-    // Add user to req.body
+    const { items } = req.body;
+
+    // ✅ Validate items existence
+    if (!Array.isArray(items) || items.length === 0) {
+      return errorResponse(res, STATUS_CODES.BAD_REQUEST, 'Transfer must include at least one item');
+    }
+
+    // ✅ Validate each item has at least 3 images
+    const invalidItem = items.find((item: any) => !Array.isArray(item.images) || item.images.length < 3);
+    if (invalidItem) {
+      return errorResponse(
+        res,
+        STATUS_CODES.BAD_REQUEST,
+        'Each item must include at least 3 images'
+      );
+    }
+
+    // Add userId to the payload
     req.body.userId = req.user!._id;
 
     const transfer = await Transfer.create(req.body);
