@@ -13,7 +13,7 @@ export interface IComplaint {
   title: string;
   description: string;
   category: 'service' | 'worker' | 'payment' | 'technical' | 'other';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
   status: 'pending' | 'in_progress' | 'resolved' | 'rejected' | 'closed';
   transferId: Types.ObjectId;
   userId: Types.ObjectId;
@@ -80,7 +80,6 @@ const ComplaintSchema = new mongoose.Schema<IComplaint>(
     },
     priority: {
       type: String,
-      required: [true, 'Priority is required'],
       enum: ['low', 'medium', 'high', 'urgent'],
       default: 'medium'
     },
@@ -105,6 +104,7 @@ const ComplaintSchema = new mongoose.Schema<IComplaint>(
     },
     relatedWorkerId: {
       type: mongoose.Schema.Types.ObjectId,
+      required: [true, 'Worker ID is required'],
       ref: 'Worker'
     },
     closedByAdminId: {

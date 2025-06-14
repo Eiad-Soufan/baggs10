@@ -308,8 +308,7 @@ router.post(
       .isIn(['service', 'worker', 'payment', 'technical', 'other'])
       .withMessage('Invalid category'),
     body('priority')
-      .notEmpty()
-      .withMessage('Priority is required')
+      .optional()
       .isIn(['low', 'medium', 'high', 'urgent'])
       .withMessage('Invalid priority'),
     body('transferId')

@@ -466,7 +466,8 @@ export const addComplaintFive = async (
       userId: req.user!._id,
       responses: [],
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      relatedWorkerId: new Types.ObjectId()
     });
 
     await complaint.save();
@@ -496,7 +497,8 @@ export const addSampleComplaints = async (
         totalAmount: 150.00,
         scheduledDate: new Date(),
         status: 'completed',
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        relatedWorkerId: new Types.ObjectId()
       },
       {
         userId: req.user!._id,
@@ -504,7 +506,8 @@ export const addSampleComplaints = async (
         totalAmount: 200.00,
         scheduledDate: new Date(),
         status: 'in_progress',
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        relatedWorkerId: new Types.ObjectId()
       },
       {
         userId: req.user!._id,
@@ -512,7 +515,8 @@ export const addSampleComplaints = async (
         totalAmount: 175.00,
         scheduledDate: new Date(),
         status: 'completed',
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        relatedWorkerId: new Types.ObjectId()
       },
       {
         userId: req.user!._id,
@@ -520,7 +524,8 @@ export const addSampleComplaints = async (
         totalAmount: 125.00,
         scheduledDate: new Date(),
         status: 'completed',
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        relatedWorkerId: new Types.ObjectId()
       },
       {
         userId: req.user!._id,
@@ -543,7 +548,8 @@ export const addSampleComplaints = async (
         priority: 'high' as const,
         status: 'pending' as const,
         transferId: createdTransfers[0]._id,
-        userId: req.user!._id
+        userId: req.user!._id,
+        relatedWorkerId: createdTransfers[0].relatedWorkerId
       },
       {
         title: 'Worker Behavior Issue',
@@ -552,7 +558,8 @@ export const addSampleComplaints = async (
         priority: 'urgent' as const,
         status: 'in_progress' as const,
         transferId: createdTransfers[1]._id,
-        userId: req.user!._id
+        userId: req.user!._id,
+        relatedWorkerId: createdTransfers[1].relatedWorkerId
       },
       {
         title: 'Payment Processing Error',
@@ -561,7 +568,8 @@ export const addSampleComplaints = async (
         priority: 'high' as const,
         status: 'pending' as const,
         transferId: createdTransfers[2]._id,
-        userId: req.user!._id
+        userId: req.user!._id,
+        relatedWorkerId: createdTransfers[2].relatedWorkerId
       },
       {
         title: 'App Technical Issue',
@@ -570,7 +578,8 @@ export const addSampleComplaints = async (
         priority: 'medium' as const,
         status: 'pending' as const,
         transferId: createdTransfers[3]._id,
-        userId: req.user!._id
+        userId: req.user!._id,
+        relatedWorkerId: createdTransfers[3].relatedWorkerId
       },
       {
         title: 'General Feedback',
@@ -579,7 +588,8 @@ export const addSampleComplaints = async (
         priority: 'low' as const,
         status: 'pending' as const,
         transferId: createdTransfers[4]._id,
-        userId: req.user!._id
+        userId: req.user!._id,
+        relatedWorkerId: createdTransfers[4].relatedWorkerId
       }
     ];
 
