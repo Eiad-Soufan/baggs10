@@ -16,7 +16,7 @@ const options: swaggerJsDoc.Options = {
     servers: [
       {
         url: process.env.NODE_ENV === 'production'
-        ? 'https://baggs5.onrender.com/'
+        ? 'https://baggs10.onrender.com/'
         : 'http://localhost:9091/',
         description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
