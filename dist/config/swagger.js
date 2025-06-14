@@ -38,7 +38,8 @@ const options = {
                 bearerAuth: []
             }]
     },
-    apis: [path_1.default.join(__dirname, '../routes/*.ts')], // Updated to look for TypeScript files
+    //apis: [path_1.default.join(__dirname, '../routes/*.ts')], // Updated to look for TypeScript files
+    apis: ['src/routes/**/*.ts']
 };
 const swaggerSpec = (0, swagger_jsdoc_1.default)(options);
 exports.default = swaggerSpec;
