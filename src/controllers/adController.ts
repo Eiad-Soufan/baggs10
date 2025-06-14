@@ -6,7 +6,7 @@ import ErrorResponse from '../utils/errorResponse';
 // @route   POST /api/v1/ads
 // @access  Private/Admin
 export const createAd = async (req: Request, res: Response, next: NextFunction) => {
-  if (!req.user) {
+  if (!req.user || req.user.role !== 'admin') {
     return next(new ErrorResponse('Not authorized to access this route', 401));
   }
 
@@ -23,8 +23,11 @@ export const createAd = async (req: Request, res: Response, next: NextFunction) 
 
 // @desc    Get all ads
 // @route   GET /api/v1/ads
-// @access  Public
+// @access  Private/Admin
 export const getAds = async (req: Request, res: Response, next: NextFunction) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return next(new ErrorResponse('Not authorized to access this route', 401));
+  }
   const ads = await Ad.find().populate({
     path: 'createdByAdminId',
     select: 'name email',
@@ -62,7 +65,7 @@ export const getAd = async (req: Request, res: Response, next: NextFunction) => 
 // @route   PUT /api/v1/ads/:id
 // @access  Private/Admin
 export const updateAd = async (req: Request, res: Response, next: NextFunction) => {
-  if (!req.user) {
+  if (!req.user || req.user.role !== 'admin') {
     return next(new ErrorResponse('Not authorized to access this route', 401));
   }
 
@@ -99,7 +102,7 @@ export const updateAd = async (req: Request, res: Response, next: NextFunction) 
 // @route   DELETE /api/v1/ads/:id
 // @access  Private/Admin
 export const deleteAd = async (req: Request, res: Response, next: NextFunction) => {
-  if (!req.user) {
+  if (!req.user || req.user.role !== 'admin') {
     return next(new ErrorResponse('Not authorized to access this route', 401));
   }
 

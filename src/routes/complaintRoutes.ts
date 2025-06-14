@@ -8,7 +8,8 @@ import {
   updateComplaint,
   deleteComplaint,
   addResponse,
-  addSampleComplaints
+  addSampleComplaints,
+  getComplaintsStats
 } from '../controllers/complaintController';
 
 import { protect, authorize } from '../middleware/auth';
@@ -25,16 +26,16 @@ router.use(protect);
  *     Complaint:
  *       type: object
  *       required:
- *         - orderId
+ *         - transferId
  *         - reason
  *         - userId
  *       properties:
  *         _id:
  *           type: string
  *           description: Auto-generated complaint ID
- *         orderId:
+ *         transferId:
  *           type: string
- *           description: ID of the order related to complaint
+ *           description: ID of the transfer related to complaint
  *         userId:
  *           type: string
  *           description: ID of user who created the complaint
@@ -89,7 +90,7 @@ router.use(protect);
  *         schema:
  *           type: string
  *       - in: query
- *         name: order
+ *         name: transfer
  *         schema:
  *           type: string
  *           enum: [asc, desc]
@@ -132,6 +133,40 @@ router.get('/', authorize('admin'), getComplaints);
 
 /**
  * @swagger
+ * /api/v1/complaints/stats:
+ *   get:
+ *     summary: Get complaints stats (Admin only)
+ *     tags: [Complaints]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Complaints stats
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalComplaints:
+ *                       type: integer
+ *                     openComplaints:
+ *                       type: integer
+ *                     solvedComplaints:
+ *                       type: integer
+ *       401:
+ *         description: Not authorized
+ *       403:
+ *         description: Forbidden - Admin access required
+ */
+router.get('/stats', authorize('admin'), getComplaintsStats);
+
+/**
+* @swagger
  * /api/v1/complaints/my-complaints:
  *   get:
  *     summary: Get user's complaints
@@ -188,7 +223,7 @@ router.get('/my-complaints', getMyComplaints);
  *                   properties:
  *                     complaintId:
  *                       type: string
- *                     orderId:
+ *                     transferId:
  *                       type: string
  *                     status:
  *                       type: string
@@ -227,10 +262,10 @@ router.get('/:id', getComplaint);
  *           schema:
  *             type: object
  *             required:
- *               - orderId
+ *               - transferId
  *               - reason
  *             properties:
- *               orderId:
+ *               transferId:
  *                 type: string
  *               reason:
  *                 type: string
@@ -273,15 +308,14 @@ router.post(
       .isIn(['service', 'worker', 'payment', 'technical', 'other'])
       .withMessage('Invalid category'),
     body('priority')
-      .notEmpty()
-      .withMessage('Priority is required')
+      .optional()
       .isIn(['low', 'medium', 'high', 'urgent'])
       .withMessage('Invalid priority'),
-    body('orderId')
+    body('transferId')
       .notEmpty()
-      .withMessage('Order ID is required')
+      .withMessage('Transfer ID is required')
       .isMongoId()
-      .withMessage('Invalid order ID'),
+      .withMessage('Invalid transfer ID'),
     body('attachments')
       .optional()
       .isArray()

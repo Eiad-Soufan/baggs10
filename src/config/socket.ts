@@ -2,15 +2,15 @@ import { Server, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import jwt from 'jsonwebtoken';
 import { IUser } from '../models/User';
-import { IOrder } from '../models/Order';
 import mongoose from 'mongoose';
+import { ITransfer } from '../models/Transfer';
 
 interface AuthenticatedSocket extends Socket {
   user?: Partial<IUser>;
 }
 
-interface OrderStatusUpdate {
-  orderId: string;
+interface TransferStatusUpdate {
+  transferId: string;
   status: string;
 }
 
@@ -42,35 +42,35 @@ export const initializeSocket = (httpServer: HttpServer) => {
   io.on('connection', (socket: AuthenticatedSocket) => {
     console.log('Client connected:', socket.id);
 
-    // Join order room
-    socket.on('joinOrderRoom', (orderId: string) => {
-      socket.join(`order-${orderId}`);
+    // Join transfer room
+    socket.on('joinTransferRoom', (transferId: string) => {
+      socket.join(`transfer-${transferId}`);
     });
 
-    // Leave order room
-    socket.on('leaveOrderRoom', (orderId: string) => {
-      socket.leave(`order-${orderId}`);
+    // Leave transfer room
+    socket.on('leaveTransferRoom', (transferId: string) => {
+      socket.leave(`transfer-${transferId}`);
     });
 
-    // Handle order status updates
-    socket.on('updateOrderStatus', async (data: OrderStatusUpdate) => {
+    // Handle transfer status updates
+    socket.on('updateTransferStatus', async (data: TransferStatusUpdate) => {
       try {
-        const { orderId, status } = data;
+        const { transferId, status } = data;
         
-        // Update order in database
-        const order = await mongoose.model<IOrder>('Order').findByIdAndUpdate(
-          new mongoose.Types.ObjectId(orderId),
+        // Update transfer in database
+        const transfer = await mongoose.model<ITransfer>('Transfer').findByIdAndUpdate(
+          new mongoose.Types.ObjectId(transferId),
           { status },
           { new: true }
         );
 
-        if (order) {
-          // Broadcast update to all clients in the order room
-          io.to(`order-${orderId}`).emit('orderStatusUpdated', order);
+        if (transfer) {
+          // Broadcast update to all clients in the transfer room
+          io.to(`transfer-${transferId}`).emit('transferStatusUpdated', transfer);
         }
       } catch (error) {
-        console.error('Error updating order status:', error);
-        socket.emit('error', 'Failed to update order status');
+        console.error('Error updating transfer status:', error);
+        socket.emit('error', 'Failed to update transfer status');
       }
     });
 

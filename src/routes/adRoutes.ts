@@ -130,7 +130,7 @@ router.post(
  *                     $ref: '#/components/schemas/Ad'
  */
 
-router.get('/', getAds);
+router.get('/',authorize('admin'), getAds);
 
 /**
  * @swagger

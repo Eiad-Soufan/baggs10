@@ -5,7 +5,8 @@ import {
   getWorker,
   createWorker,
   updateWorker,
-  deleteWorker
+  deleteWorker,
+  getWorkersStats
 } from '../controllers/workerController';
 
 import { protect, authorize } from '../middleware/auth';
@@ -14,8 +15,8 @@ const router: Router = express.Router();
 
 // Apply protection to all routes
 router.use(protect);
-// Apply admin authorization to all routes
-router.use(authorize('admin'));
+// Remove global admin authorization for all routes
+// router.use(authorize('admin'));
 
 /**
  * @swagger
@@ -33,7 +34,42 @@ router.use(authorize('admin'));
  *       403:
  *         description: Forbidden
  */
-router.get('/', getWorkers);
+router.get('/',authorize('admin'), getWorkers);
+
+/**
+ * @swagger
+ * /api/v1/workers/stats:
+ *   get:
+ *     summary: Get workers statistics
+ *     tags: [Workers]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Returns total workers, workers with transfers, and available workers. Admin only.
+ *     responses:
+ *       200:
+ *         description: Workers statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalWorkers:
+ *                       type: integer
+ *                     workersWithTransfers:
+ *                       type: integer
+ *                     availableWorkers:
+ *                       type: integer
+ *       401:
+ *         description: Not authorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/stats', authorize('admin'), getWorkersStats)
 
 /**
  * @swagger
@@ -84,10 +120,13 @@ router.get('/:id', getWorker);
  *               - experience
  *               - timeFormat
  *               - role
+ *               - identityNumber
  *             properties:
  *               name:
  *                 type: string
  *               email:
+ *                 type: string
+ *               identityNumber:
  *                 type: string
  *               phone:
  *                 type: string
@@ -136,6 +175,7 @@ router.post(
   authorize('admin'),
   [
     body('name').not().isEmpty().withMessage('Name is required'),
+    body('identityNumber').not().isEmpty().withMessage('Identity Number is required'),
     body('email').isEmail().withMessage('Please include a valid email'),
     body('phone').not().isEmpty().withMessage('Phone number is required'),
     body('password')
@@ -161,7 +201,8 @@ router.post(
       .withMessage('Image must be a string'),
     body('role')
       .isIn(['worker', 'manager' , 'supervisor'])
-      .withMessage('Role must be either worker, manager or supervisor')
+      .withMessage('Role must be either worker, manager or supervisor'),
+    
   ],
   createWorker
 );
@@ -210,28 +251,17 @@ router.post(
  *     responses:
  *       200:
  *         description: Worker updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/Worker'
  *       400:
  *         description: Bad request
  *       401:
  *         description: Not authorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden. Only admin or the worker themselves can update.
  *       404:
  *         description: Worker not found
  */
 router.put(
   '/:id',
-  protect,
-  authorize('admin'),
   [
     body('email')
       .optional()
@@ -298,8 +328,8 @@ router.put(
  *       401:
  *         description: Not authorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden. Only admin or the worker themselves can delete.
  */
-router.delete('/:id', protect, authorize('admin'), deleteWorker);
+router.delete('/:id', deleteWorker);
 
 export default router; 
