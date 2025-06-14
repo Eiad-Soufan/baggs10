@@ -235,6 +235,55 @@ export const createNotification = async (
 };
 
 /**
+ * @desc    Create notification (Admin only)
+ * @route   POST /api/v1/notifications/mark-all-as-read
+ * @access  Private
+ */
+export const markAllAsRead = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!._id;
+
+    // Find notifications for this user (global or targeted)
+    const notifications = await Notification.find({
+      $or: [
+        { isGlobal: true },
+        { targetUsers: userId }
+      ],
+      expiresAt: { $gt: new Date() },
+      'readBy.user': { $ne: userId } // not yet read
+    });
+
+    // Update only unread notifications
+    const bulkOps = notifications.map(notification => ({
+      updateOne: {
+        filter: { _id: notification._id },
+        update: {
+          $push: {
+            readBy: {
+              user: userId,
+              readAt: new Date()
+            }
+          }
+        }
+      }
+    }));
+
+    if (bulkOps.length > 0) {
+      await Notification.bulkWrite(bulkOps);
+    }
+
+    successResponse(res, STATUS_CODES.OK, 'All notifications marked as read', null);
+  } catch (err) {
+    errorResponse(res, STATUS_CODES.INTERNAL_SERVER_ERROR, 'Error marking all notifications as read', err);
+  }
+};
+
+
+/**
  * @desc    Mark notification as read
  * @route   PUT /api/v1/notifications/:id/read
  * @access  Private
