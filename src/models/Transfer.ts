@@ -4,7 +4,10 @@ export interface ITransferItem {
   name: string;
   weight: number;
   images: string[];
-  isBreakable: boolean;
+  isBreakable: {
+    type: boolean;
+    default: false;
+  };
 }
 
 export interface ITransferRating {
