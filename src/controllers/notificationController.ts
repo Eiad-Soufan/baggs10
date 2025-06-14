@@ -82,13 +82,61 @@ export const getNotifications = async (
  * @route   GET /api/v1/notifications/my-notifications
  * @access  Private
  */
+// export const getMyNotifications = async (
+//   req: Request<{}, {}, {}, { read?: string; page?: string; limit?: string }>,
+//   res: Response,
+//   next: NextFunction
+// ): Promise<void> => {
+//   try {
+//     const { read, page = '1', limit = '10' } = req.query;
+
+//     // Build query for user-specific and global notifications
+//     const query: Record<string, any> = {
+//       $or: [
+//         { targetUsers: req.user!._id },
+//         { isGlobal: true }
+//       ],
+//       expiresAt: { $gt: new Date() }
+//     };
+
+//     // Filter by read status if specified
+//     if (read === 'true') {
+//       query['readBy.user'] = req.user!._id;
+//     } else if (read === 'false') {
+//       query['readBy.user'] = { $ne: req.user!._id };
+//     }
+
+//     // Pagination
+//     const pageNum = parseInt(page, 10);
+//     const limitNum = parseInt(limit, 10);
+//     const startIndex = (pageNum - 1) * limitNum;
+//     const total = await Notification.countDocuments(query);
+
+//     const notifications = await Notification.find(query)
+//       .populate('createdBy', 'name email')
+//       .sort('-createdAt')
+//       .skip(startIndex)
+//       .limit(limitNum);
+
+//     successResponse(res, STATUS_CODES.OK, 'Notifications retrieved successfully', notifications, {
+//       pagination: {
+//         total,
+//         page: pageNum,
+//         pages: Math.ceil(total / limitNum)
+//       }
+//     });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
+
 export const getMyNotifications = async (
-  req: Request<{}, {}, {}, { read?: string; page?: string; limit?: string }>,
+  req: Request<{}, {}, {}, { read?: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { read, page = '1', limit = '10' } = req.query;
+    const { read } = req.query;
 
     // Build query for user-specific and global notifications
     const query: Record<string, any> = {
@@ -106,29 +154,16 @@ export const getMyNotifications = async (
       query['readBy.user'] = { $ne: req.user!._id };
     }
 
-    // Pagination
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const startIndex = (pageNum - 1) * limitNum;
-    const total = await Notification.countDocuments(query);
-
     const notifications = await Notification.find(query)
       .populate('createdBy', 'name email')
-      .sort('-createdAt')
-      .skip(startIndex)
-      .limit(limitNum);
+      .sort('-createdAt');
 
-    successResponse(res, STATUS_CODES.OK, 'Notifications retrieved successfully', notifications, {
-      pagination: {
-        total,
-        page: pageNum,
-        pages: Math.ceil(total / limitNum)
-      }
-    });
+    successResponse(res, STATUS_CODES.OK, 'Notifications retrieved successfully', notifications);
   } catch (err) {
     next(err);
   }
 };
+
 
 /**
  * @desc    Get single notification
