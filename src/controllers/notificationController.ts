@@ -3,7 +3,7 @@ import { validationResult } from 'express-validator';
 import Notification from '../models/Notification';
 import { successResponse, errorResponse, STATUS_CODES } from '../utils/responseHandler';
 import ErrorResponse from '../utils/errorResponse';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 interface NotificationFilters {
   type?: string;
@@ -32,6 +32,9 @@ export const getNotifications = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
     const { type, page = '1', limit = '10', search } = req.query;
 
     // Build query
@@ -80,52 +83,38 @@ export const getNotifications = async (
  * @access  Private
  */
 export const getMyNotifications = async (
-  req: Request<{}, {}, {}, { read?: string; page?: string; limit?: string }>,
+  req: Request<{}, {}, {}, { read?: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { read, page = '1', limit = '10' } = req.query;
+    const { read } = req.query;
+    const userId = new mongoose.Types.ObjectId(req.user!._id);
 
-    // Build query for user-specific and global notifications
     const query: Record<string, any> = {
       $or: [
-        { targetUsers: req.user!._id },
+        { targetUsers: { $in: [userId] } },
         { isGlobal: true }
       ],
       expiresAt: { $gt: new Date() }
     };
 
-    // Filter by read status if specified
     if (read === 'true') {
-      query['readBy.user'] = req.user!._id;
+      query['readBy.user'] = userId;
     } else if (read === 'false') {
-      query['readBy.user'] = { $ne: req.user!._id };
+      query['readBy.user'] = { $ne: userId };
     }
-
-    // Pagination
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const startIndex = (pageNum - 1) * limitNum;
-    const total = await Notification.countDocuments(query);
 
     const notifications = await Notification.find(query)
       .populate('createdBy', 'name email')
-      .sort('-createdAt')
-      .skip(startIndex)
-      .limit(limitNum);
+      .sort('-createdAt');
 
-    successResponse(res, STATUS_CODES.OK, 'Notifications retrieved successfully', notifications, {
-      pagination: {
-        total,
-        page: pageNum,
-        pages: Math.ceil(total / limitNum)
-      }
-    });
+    successResponse(res, STATUS_CODES.OK, 'Notifications retrieved successfully', notifications);
   } catch (err) {
     next(err);
   }
 };
+
 
 /**
  * @desc    Get single notification
@@ -171,6 +160,9 @@ export const createNotification = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       errorResponse(res, STATUS_CODES.VALIDATION_ERROR, 'Validation error', errors.array());
@@ -192,6 +184,55 @@ export const createNotification = async (
     errorResponse(res, STATUS_CODES.INTERNAL_SERVER_ERROR, 'Error creating notification', err);
   }
 };
+
+/**
+ * @desc    Create notification (Admin only)
+ * @route   POST /api/v1/notifications/mark-all-as-read
+ * @access  Private
+ */
+export const markAllAsRead = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!._id;
+
+    // Find notifications for this user (global or targeted)
+    const notifications = await Notification.find({
+      $or: [
+        { isGlobal: true },
+        { targetUsers: userId }
+      ],
+      expiresAt: { $gt: new Date() },
+      'readBy.user': { $ne: userId } // not yet read
+    });
+
+    // Update only unread notifications
+    const bulkOps = notifications.map(notification => ({
+      updateOne: {
+        filter: { _id: notification._id },
+        update: {
+          $push: {
+            readBy: {
+              user: userId,
+              readAt: new Date()
+            }
+          }
+        }
+      }
+    }));
+
+    if (bulkOps.length > 0) {
+      await Notification.bulkWrite(bulkOps);
+    }
+
+    successResponse(res, STATUS_CODES.OK, 'All notifications marked as read', null);
+  } catch (err) {
+    errorResponse(res, STATUS_CODES.INTERNAL_SERVER_ERROR, 'Error marking all notifications as read', err);
+  }
+};
+
 
 /**
  * @desc    Mark notification as read
@@ -245,6 +286,9 @@ export const updateNotification = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
     let notification = await Notification.findById(req.params.id);
 
     if (!notification) {
@@ -285,6 +329,9 @@ export const deleteNotification = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  if (!req.user || req.user.role !== 'admin') {
+    return next(new ErrorResponse('Not authorized to access this route', 401));
+  }
   try {
     const notification = await Notification.findById(req.params.id);
 

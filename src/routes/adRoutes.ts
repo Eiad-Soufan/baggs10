@@ -10,6 +10,7 @@ import {
 import { protect, authorize } from '../middleware/auth';
 
 const router: Router = express.Router();
+router.use(protect);
 
 /**
  * @swagger

@@ -17,9 +17,10 @@ export interface IUser {
   // Worker specific fields
   specialization?: string;
   rating?: number;
-  totalOrders?: number;
+  totalTransfers?: number;
   // Customer specific fields
   address?: string;
+  informationPreference: ('email' | 'sms' | 'call')[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -101,7 +102,7 @@ const UserSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
       max: 5,
       default: 0,
     },
-    totalOrders: {
+    totalTransfers: {
       type: Number,
       default: 0,
     },
@@ -109,6 +110,12 @@ const UserSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
     address: {
       type: String,
       trim: true,
+    },
+    informationPreference: {
+      type: [String],
+      enum: ['email', 'sms', 'call'],
+      default: ['email'],
+      required: true,
     },
   },
   {

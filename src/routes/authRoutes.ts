@@ -20,6 +20,7 @@ interface RegisterRequestBody {
   preferredLang?: string;
   region?: string;
   timeFormat?: string;
+  informationPreference: ['email', 'sms', 'call'];
 }
 
 interface LoginRequestBody {
@@ -223,6 +224,12 @@ router.post(
  *                       type: string
  *                     role:
  *                       type: string
+ *                     informationPreference:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                         enum: [email, sms, call]
+ *                       description: User's preferred information channels
  *       401:
  *         description: Not authorized
  */

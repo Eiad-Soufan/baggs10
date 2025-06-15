@@ -34,7 +34,6 @@ const options: swaggerJsDoc.Options = {
       bearerAuth: []
     }]
   },
-  //apis: [path.join(__dirname, '../routes/*.ts')], // Updated to look for TypeScript files
    apis: ['src/routes/**/*.ts']
 };
 

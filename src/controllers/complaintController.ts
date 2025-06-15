@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
 import Complaint, { IComplaint } from '../models/Complaint';
-import Order from '../models/Order';
 import { successResponse, errorResponse, STATUS_CODES } from '../utils/responseHandler';
 import { Types } from 'mongoose';
 import { IUser } from '../models/User';
+import ErrorResponse from '../utils/errorResponse';
+import Transfer from '../models/Transfer';
 
 // Define complaint status enum
 const ComplaintStatus = {
@@ -70,7 +71,7 @@ interface ChatMessage {
 
 interface ChatResponse {
   complaintId: Types.ObjectId;
-  orderId: Types.ObjectId;
+  transferId: Types.ObjectId;
   status: string;
   createdAt: Date;
   updatedAt: Date;
@@ -109,6 +110,9 @@ export const getComplaints = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
     const { 
       status,
       priority,
@@ -177,7 +181,7 @@ export const getComplaints = async (
       .populate('userId', 'name email')
       .populate('assignedToId', 'name email')
       .populate('relatedWorkerId', 'name email')
-      .populate('orderId')
+      .populate('transferId')
       .populate('closedByAdminId', 'name email')
       .populate('responses.responderId', 'name email')
       .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
@@ -210,7 +214,7 @@ export const getMyComplaints = async (
     const complaints = await Complaint.find({ userId: req.user!._id })
       .populate('assignedToId', 'name email')
       .populate('relatedWorkerId', 'name email')
-      .populate('orderId')
+      .populate('transferId')
       .populate('closedByAdminId', 'name email')
       .populate('responses.responderId', 'name email')
       .sort('-createdAt');
@@ -236,7 +240,7 @@ export const getComplaint = async (
       .populate('userId', 'name email role')
       .populate('assignedToId', 'name email role')
       .populate('relatedWorkerId', 'name email role')
-      .populate('orderId')
+      .populate('transferId')
       .populate('closedByAdminId', 'name email role')
       .populate('responses.responderId', 'name email role');
 
@@ -353,7 +357,7 @@ export const addResponse = async (
       .populate('userId', 'name email role')
       .populate('assignedToId', 'name email role')
       .populate('relatedWorkerId', 'name email role')
-      .populate('orderId')
+      .populate('transferId')
       .populate('closedByAdminId', 'name email role')
       .populate('responses.responderId', 'name email role');
 
@@ -373,6 +377,9 @@ export const updateComplaint = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
   try {
     let complaint = await Complaint.findById(req.params.id);
 
@@ -398,7 +405,7 @@ export const updateComplaint = async (
     .populate('userId', 'name email role')
     .populate('assignedToId', 'name email role')
     .populate('relatedWorkerId', 'name email role')
-    .populate('orderId')
+    .populate('transferId')
     .populate('closedByAdminId', 'name email role')
     .populate('responses.responderId', 'name email role');
 
@@ -419,6 +426,9 @@ export const deleteComplaint = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
     const complaint = await Complaint.findById(req.params.id);
 
     if (!complaint) {
@@ -452,11 +462,12 @@ export const addComplaintFive = async (
       category: 'service',
       priority: 'high',
       status: 'pending',
-      orderId: new Types.ObjectId(), // You'll need to provide a valid order ID
+      transferId: new Types.ObjectId(), // You'll need to provide a valid transfer ID
       userId: req.user!._id,
       responses: [],
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      relatedWorkerId: new Types.ObjectId()
     });
 
     await complaint.save();
@@ -478,15 +489,16 @@ export const addSampleComplaints = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // First create sample orders
-    const sampleOrders = [
+    // First create sample transfers
+    const sampleTransfers = [
       {
         userId: req.user!._id,
         serviceId: new Types.ObjectId(), // You'll need to provide a valid service ID
         totalAmount: 150.00,
         scheduledDate: new Date(),
         status: 'completed',
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        relatedWorkerId: new Types.ObjectId()
       },
       {
         userId: req.user!._id,
@@ -494,7 +506,8 @@ export const addSampleComplaints = async (
         totalAmount: 200.00,
         scheduledDate: new Date(),
         status: 'in_progress',
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        relatedWorkerId: new Types.ObjectId()
       },
       {
         userId: req.user!._id,
@@ -502,7 +515,8 @@ export const addSampleComplaints = async (
         totalAmount: 175.00,
         scheduledDate: new Date(),
         status: 'completed',
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        relatedWorkerId: new Types.ObjectId()
       },
       {
         userId: req.user!._id,
@@ -510,7 +524,8 @@ export const addSampleComplaints = async (
         totalAmount: 125.00,
         scheduledDate: new Date(),
         status: 'completed',
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        relatedWorkerId: new Types.ObjectId()
       },
       {
         userId: req.user!._id,
@@ -522,9 +537,9 @@ export const addSampleComplaints = async (
       }
     ];
 
-    const createdOrders = await Order.insertMany(sampleOrders);
+    const createdTransfers = await Transfer.insertMany(sampleTransfers);
 
-    // Now create complaints using the order IDs
+    // Now create complaints using the transfer IDs
     const sampleComplaints = [
       {
         title: 'Late Service Delivery',
@@ -532,8 +547,9 @@ export const addSampleComplaints = async (
         category: 'service' as const,
         priority: 'high' as const,
         status: 'pending' as const,
-        orderId: createdOrders[0]._id,
-        userId: req.user!._id
+        transferId: createdTransfers[0]._id,
+        userId: req.user!._id,
+        relatedWorkerId: createdTransfers[0].relatedWorkerId
       },
       {
         title: 'Worker Behavior Issue',
@@ -541,8 +557,9 @@ export const addSampleComplaints = async (
         category: 'worker' as const,
         priority: 'urgent' as const,
         status: 'in_progress' as const,
-        orderId: createdOrders[1]._id,
-        userId: req.user!._id
+        transferId: createdTransfers[1]._id,
+        userId: req.user!._id,
+        relatedWorkerId: createdTransfers[1].relatedWorkerId
       },
       {
         title: 'Payment Processing Error',
@@ -550,8 +567,9 @@ export const addSampleComplaints = async (
         category: 'payment' as const,
         priority: 'high' as const,
         status: 'pending' as const,
-        orderId: createdOrders[2]._id,
-        userId: req.user!._id
+        transferId: createdTransfers[2]._id,
+        userId: req.user!._id,
+        relatedWorkerId: createdTransfers[2].relatedWorkerId
       },
       {
         title: 'App Technical Issue',
@@ -559,8 +577,9 @@ export const addSampleComplaints = async (
         category: 'technical' as const,
         priority: 'medium' as const,
         status: 'pending' as const,
-        orderId: createdOrders[3]._id,
-        userId: req.user!._id
+        transferId: createdTransfers[3]._id,
+        userId: req.user!._id,
+        relatedWorkerId: createdTransfers[3].relatedWorkerId
       },
       {
         title: 'General Feedback',
@@ -568,8 +587,9 @@ export const addSampleComplaints = async (
         category: 'other' as const,
         priority: 'low' as const,
         status: 'pending' as const,
-        orderId: createdOrders[4]._id,
-        userId: req.user!._id
+        transferId: createdTransfers[4]._id,
+        userId: req.user!._id,
+        relatedWorkerId: createdTransfers[4].relatedWorkerId
       }
     ];
 
@@ -580,11 +600,44 @@ export const addSampleComplaints = async (
       STATUS_CODES.CREATED, 
       '5 sample complaints created successfully', 
       {
-        orders: createdOrders,
+        transfers: createdTransfers,
         complaints: createdComplaints
       }
     );
   } catch (err) {
     next(err);
+  } 
+};
+
+/**
+ * @desc    Get complaints stats (Admin only)
+ * @route   GET /api/v1/complaints/stats
+ * @access  Private/Admin
+ */
+export const getComplaintsStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+    // Only admin can access this route
+    if (!req.user || (req.user.role !== 'admin')) {
+      return next(new ErrorResponse('Not authorized to access this route', 403));
+    }
+  try {
+    const totalComplaints = await Complaint.countDocuments({});
+    const openComplaints = await Complaint.countDocuments({
+      status: { $ne: ComplaintStatus.CLOSED }
+    })
+    const solvedComplaints = await Complaint.countDocuments({ status: ComplaintStatus.CLOSED })
+    res.status(200).json({
+      success: true,
+      data: {
+        totalComplaints,
+        openComplaints,
+        solvedComplaints
+      }
+    })
+  } catch (err) {
+    next(err)
   }
 }; 

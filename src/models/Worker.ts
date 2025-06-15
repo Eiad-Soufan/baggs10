@@ -2,7 +2,7 @@ import mongoose, { Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IServiceRating {
-  orderId: mongoose.Types.ObjectId;
+  transferId: mongoose.Types.ObjectId;
   rating: number;
   comment?: string;
   createdAt: Date;
@@ -40,9 +40,9 @@ export interface IWorkerMethods {
 export interface WorkerModel extends Model<IWorker, {}, IWorkerMethods> {}
 
 const ServiceRatingSchema = new mongoose.Schema<IServiceRating>({
-  orderId: {
+  transferId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Order',
+    ref: 'Transfer',
     required: true
   },
   rating: {
@@ -93,6 +93,7 @@ const WorkerSchema = new mongoose.Schema<IWorker, WorkerModel, IWorkerMethods>(
       unique: true,
       sparse: true,
       trim: true,
+      required: [true, 'Identity Number is required'],
     },
     isAvailable: {
       type: Boolean,
@@ -105,7 +106,6 @@ const WorkerSchema = new mongoose.Schema<IWorker, WorkerModel, IWorkerMethods>(
     },
     specialization: {
       type: String,
-      required: [true, 'Specialization is required'],
       trim: true
     },
     rating: {

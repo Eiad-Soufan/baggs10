@@ -27,6 +27,10 @@ export const getUsers = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Only admin can access this route
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ErrorResponse('Not authorized to access this route', 403));
+    }
     const users = await User.find().select('-password');
     
     res.status(200).json({
@@ -50,6 +54,9 @@ export const getUser = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!req.user || (req.user.role !== 'admin' && req.user._id.toString() !== req.params.id)) {
+      return next(new ErrorResponse('Not authorized to update this worker', 403));
+    }
     const user = await User.findById(req.params.id).select('-password');
     
     if (!user) {
@@ -110,23 +117,22 @@ export const updateUser = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Only admin or the user themselves can update
+    if (!req.user || (req.user.role !== 'admin' && req.user._id.toString() !== req.params.id)) {
+      return next(new ErrorResponse('Not authorized to update this user', 403));
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
       return;
     }
-    
     let user = await User.findById(req.params.id);
-    
     if (!user) {
       return next(
         new ErrorResponse(`User not found with id of ${req.params.id}`, 404)
       );
     }
-    
-    // Create a new object without the password field
     const { password, ...updateData } = req.body;
-    
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       updateData,
@@ -135,13 +141,11 @@ export const updateUser = async (
         runValidators: true
       }
     ).select('-password');
-
     if (!updatedUser) {
       return next(
         new ErrorResponse(`User not found with id of ${req.params.id}`, 404)
       );
     }
-    
     res.status(200).json({
       success: true,
       data: updatedUser
@@ -162,16 +166,17 @@ export const deleteUser = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Only admin or the user themselves can delete
+    if (!req.user || (req.user.role !== 'admin' && req.user._id.toString() !== req.params.id)) {
+      return next(new ErrorResponse('Not authorized to update this worker', 403));
+    }
     const user = await User.findById(req.params.id);
-    
     if (!user) {
       return next(
         new ErrorResponse(`User not found with id of ${req.params.id}`, 404)
       );
     }
-    
     await user.deleteOne();
-    
     res.status(200).json({
       success: true,
       data: {}

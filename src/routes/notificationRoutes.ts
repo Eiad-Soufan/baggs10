@@ -1,16 +1,17 @@
-import express, { Router } from 'express';
-import { body } from 'express-validator';
+import express, { Router } from "express";
+import { body } from "express-validator";
 import {
-  getNotifications,
-  getMyNotifications,
-  getNotification,
-  createNotification,
-  updateNotification,
-  deleteNotification,
-  markAsRead
-} from '../controllers/notificationController';
+	getNotifications,
+	getMyNotifications,
+	getNotification,
+	createNotification,
+	updateNotification,
+	deleteNotification,
+	markAsRead,
+  markAllAsRead,
+} from "../controllers/notificationController";
 
-import { protect, authorize } from '../middleware/auth';
+import { protect, authorize } from "../middleware/auth";
 
 const router: Router = express.Router();
 
@@ -120,7 +121,48 @@ router.use(protect);
  *       403:
  *         description: Forbidden - Admin access required
  */
-router.get('/', authorize('admin'), getNotifications);
+router.get("/", authorize("admin"), getNotifications);
+
+/**
+ * @swagger
+ * /api/v1/notifications/mark-all-read:
+ *   patch:
+ *     summary: Mark all unread notifications as read
+ *     description: >
+ *       Allows an authenticated user to mark all of their unread notifications as read.
+ *       This includes notifications specifically targeted to them or global notifications.
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All notifications marked as read successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: All notifications marked as read
+ *       401:
+ *         description: Unauthorized - user not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.patch('/mark-all-read', markAllAsRead);
 
 /**
  * @swagger
@@ -159,7 +201,7 @@ router.get('/', authorize('admin'), getNotifications);
  *       401:
  *         description: Not authorized
  */
-router.get('/my-notifications', getMyNotifications);
+router.get("/my-notifications", getMyNotifications);
 
 /**
  * @swagger
@@ -192,7 +234,7 @@ router.get('/my-notifications', getMyNotifications);
  *       404:
  *         description: Notification not found
  */
-router.get('/:id', getNotification);
+router.get("/:id", getNotification);
 
 /**
  * @swagger
@@ -248,20 +290,20 @@ router.get('/:id', getNotification);
  *         description: Forbidden - Admin access required
  */
 router.post(
-  '/',
-  authorize('admin'),
-  [
-    body('title').not().isEmpty().withMessage('Title is required'),
-    body('message').not().isEmpty().withMessage('Message is required'),
-    body('type')
-      .optional()
-      .isIn(['info', 'warning', 'error', 'success'])
-      .withMessage('Invalid notification type'),
-    body('targetUsers').optional().isArray(),
-    body('isGlobal').optional().isBoolean(),
-    body('expiresAt').optional().isISO8601()
-  ],
-  createNotification
+	"/",
+	authorize("admin"),
+	[
+		body("title").not().isEmpty().withMessage("Title is required"),
+		body("message").not().isEmpty().withMessage("Message is required"),
+		body("type")
+			.optional()
+			.isIn(["info", "warning", "error", "success"])
+			.withMessage("Invalid notification type"),
+		body("targetUsers").optional().isArray(),
+		body("isGlobal").optional().isBoolean(),
+		body("expiresAt").optional().isISO8601(),
+	],
+	createNotification
 );
 
 /**
@@ -295,7 +337,7 @@ router.post(
  *       404:
  *         description: Notification not found
  */
-router.put('/:id/read', markAsRead);
+router.put("/:id/read", markAsRead);
 
 /**
  * @swagger
@@ -356,20 +398,20 @@ router.put('/:id/read', markAsRead);
  *         description: Notification not found
  */
 router.put(
-  '/:id',
-  authorize('admin'),
-  [
-    body('title').optional(),
-    body('message').optional(),
-    body('type')
-      .optional()
-      .isIn(['info', 'warning', 'error', 'success'])
-      .withMessage('Invalid notification type'),
-    body('targetUsers').optional().isArray(),
-    body('isGlobal').optional().isBoolean(),
-    body('expiresAt').optional().isISO8601()
-  ],
-  updateNotification
+	"/:id",
+	authorize("admin"),
+	[
+		body("title").optional(),
+		body("message").optional(),
+		body("type")
+			.optional()
+			.isIn(["info", "warning", "error", "success"])
+			.withMessage("Invalid notification type"),
+		body("targetUsers").optional().isArray(),
+		body("isGlobal").optional().isBoolean(),
+		body("expiresAt").optional().isISO8601(),
+	],
+	updateNotification
 );
 
 /**
@@ -405,6 +447,6 @@ router.put(
  *       404:
  *         description: Notification not found
  */
-router.delete('/:id', authorize('admin'), deleteNotification);
+router.delete("/:id", authorize("admin"), deleteNotification);
 
-export default router; 
+export default router;
