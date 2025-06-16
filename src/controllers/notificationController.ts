@@ -3,7 +3,7 @@ import { validationResult } from 'express-validator';
 import Notification from '../models/Notification';
 import { successResponse, errorResponse, STATUS_CODES } from '../utils/responseHandler';
 import ErrorResponse from '../utils/errorResponse';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 interface NotificationFilters {
   type?: string;
@@ -137,21 +137,20 @@ export const getMyNotifications = async (
 ): Promise<void> => {
   try {
     const { read } = req.query;
+    const userId = new mongoose.Types.ObjectId(req.user!._id);
 
-    // Build query for user-specific and global notifications
     const query: Record<string, any> = {
       $or: [
-        { targetUsers: req.user!._id },
+        { targetUsers: { $in: [userId] } },
         { isGlobal: true }
       ],
       expiresAt: { $gt: new Date() }
     };
 
-    // Filter by read status if specified
     if (read === 'true') {
-      query['readBy.user'] = req.user!._id;
+      query['readBy.user'] = userId;
     } else if (read === 'false') {
-      query['readBy.user'] = { $ne: req.user!._id };
+      query['readBy.user'] = { $ne: userId };
     }
 
     const notifications = await Notification.find(query)

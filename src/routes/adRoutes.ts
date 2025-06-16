@@ -6,10 +6,12 @@ import {
   getAd,
   updateAd,
   deleteAd,
+  getAdsStats,
 } from '../controllers/adController';
 import { protect, authorize } from '../middleware/auth';
 
 const router: Router = express.Router();
+router.use(protect);
 
 /**
  * @swagger
@@ -130,7 +132,55 @@ router.post(
  *                     $ref: '#/components/schemas/Ad'
  */
 
-router.get('/',authorize('admin'), getAds);
+router.get('/', getAds);
+
+/**
+ * @swagger
+ * /api/v1/ads/stats:
+ *   get:
+ *     tags:
+ *       - Ads
+ *     summary: Get advertisement statistics (admin only)
+ *     description: Returns the total number of ads, how many are active (not expired), and how many are deactive (expired). Only accessible by admin users.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successful response with ad statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalAds:
+ *                       type: integer
+ *                       example: 120
+ *                     activeAds:
+ *                       type: integer
+ *                       example: 95
+ *                     deactiveAds:
+ *                       type: integer
+ *                       example: 25
+ *       403:
+ *         description: Forbidden - Not authorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get("/stats", authorize("admin"), getAdsStats);
 
 /**
  * @swagger
