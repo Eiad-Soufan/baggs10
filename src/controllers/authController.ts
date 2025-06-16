@@ -13,6 +13,7 @@ interface RegisterRequestBody {
   role?: 'admin' | 'customer' | 'worker';
   specialization?: string;
   address?: string;
+  region?: string;
 }
 
 interface LoginRequestBody {
@@ -44,7 +45,7 @@ export const register = async (
       return;
     }
 
-    const { name, email, phone, password, identityNumber, role, specialization, address } = req.body;
+    const { name, email, phone, password, identityNumber, role, specialization, address, region } = req.body;
 
     // Prevent worker registration through this endpoint
     if (role === 'worker') {
@@ -68,7 +69,8 @@ export const register = async (
       identityNumber,
       role: role === 'admin' ? 'admin' : 'customer', // Allow admin role if specified, otherwise default to customer
       specialization,
-      address
+      address,
+      region: region || 'Unknown', // Default region if not provided
     });
 
     sendTokenResponse(user, 201, res);
@@ -139,6 +141,7 @@ export const getMe = async (
       success: true,
       data: {
         ...user.toObject(),
+        region: user.region || 'Unknown',
         informationPreference: user.informationPreference || ['email']
       }
     });
