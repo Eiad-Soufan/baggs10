@@ -187,3 +187,50 @@ export const deleteUser = async (
     next(err);
   }
 }; 
+
+
+/**
+ * @desc    Delete user according to the name, email, and password
+ * @route   DELETE /api/v1/users/delete
+ * @access  Public
+ */
+export const deleteUserByNameEmailAndPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return next(new ErrorResponse('Name, email, and password are required', 400));
+    }
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+
+    const user = await User.findOne({ name, email }).select('+password');
+
+    if (!user) {
+      return next(new ErrorResponse('User not found', 404));
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return next(new ErrorResponse('Invalid password', 401));
+    }
+
+    await user.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: 'User deleted successfully',
+      data: {}
+    });
+  } catch (err) {
+    next(err);
+  }
+};
