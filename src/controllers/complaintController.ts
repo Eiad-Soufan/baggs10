@@ -493,47 +493,68 @@ export const addSampleComplaints = async (
     const sampleTransfers = [
       {
         userId: req.user!._id,
-        serviceId: new Types.ObjectId(), // You'll need to provide a valid service ID
         totalAmount: 150.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'completed',
         paymentStatus: 'paid',
-        relatedWorkerId: new Types.ObjectId()
+        relatedWorkerId: new Types.ObjectId(),
+        from: 'New York',
+        to: 'Los Angeles',
+        deliveryTime: '2025-12-01T10:00:00Z',
+        pickUpDate: new Date() ,
+        pickUpTime: '2025-12-01T09:00:00Z',
       },
       {
         userId: req.user!._id,
-        serviceId: new Types.ObjectId(),
         totalAmount: 200.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'in_progress',
         paymentStatus: 'paid',
-        relatedWorkerId: new Types.ObjectId()
+        relatedWorkerId: new Types.ObjectId(),
+        from: 'New York',
+        to: 'Los Angeles',
+        deliveryTime: '2025-10-01T10:00:00Z',
+        pickUpDate: new Date(),
+        pickUpTime: '2025-10-01T09:00:00Z',
       },
       {
         userId: req.user!._id,
-        serviceId: new Types.ObjectId(),
         totalAmount: 175.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'completed',
         paymentStatus: 'paid',
-        relatedWorkerId: new Types.ObjectId()
+        relatedWorkerId: new Types.ObjectId(),
+        from: 'New York',
+        to: 'Los Angeles',
+        deliveryTime: '2026-10-01T10:00:00Z',
+        pickUpDate: new Date(),
+        pickUpTime: '2026-10-01T09:00:00Z',
       },
       {
         userId: req.user!._id,
-        serviceId: new Types.ObjectId(),
         totalAmount: 125.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'completed',
         paymentStatus: 'paid',
-        relatedWorkerId: new Types.ObjectId()
+        relatedWorkerId: new Types.ObjectId(),
+        from: 'New York',
+        to: 'Los Angeles',
+        deliveryTime: '2026-10-01T10:00:00Z',
+        pickUpDate: new Date(),
+        pickUpTime: '2026-10-01T09:00:00Z',
       },
       {
         userId: req.user!._id,
-        serviceId: new Types.ObjectId(),
         totalAmount: 300.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'completed',
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        relatedWorkerId: new Types.ObjectId(),
+        from: 'San Francisco',
+        to: 'Miami',
+        deliveryTime: '2028-10-01T12:00:00Z',
+        pickUpDate: new Date(),
+        pickUpTime: '2028-10-01T11:00:00Z',
       }
     ];
 

@@ -306,10 +306,15 @@ export const addSampleTransfers = async (
         ],
         workerId: new Types.ObjectId(),
         totalAmount: 150.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'completed',
         paymentStatus: 'paid',
-        completedAt: new Date()
+        completedAt: new Date(),
+        from: '123 Main St, City A',
+        to: '456 Elm St, City B',
+        deliveryTime: '2025-12-01T10:00:00Z',
+        pickUpDate: new Date(),
+        pickUpTime: '2025-12-01T12:00:00Z',
       },
       {
         userId: req.user!._id,
@@ -323,9 +328,15 @@ export const addSampleTransfers = async (
         ],
         workerId: new Types.ObjectId(),
         totalAmount: 200.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'in_progress',
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        completedAt: new Date(),
+        from: 'New York',
+        to: 'Los Angeles',
+        deliveryTime: '2025-12-01T10:00:00Z',
+        pickUpDate: new Date() ,
+        pickUpTime: '2025-12-01T12:00:00Z',
       },
       {
         userId: req.user!._id,
@@ -339,10 +350,15 @@ export const addSampleTransfers = async (
         ],
         workerId: new Types.ObjectId(),
         totalAmount: 175.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'completed',
         paymentStatus: 'paid',
-        completedAt: new Date()
+        completedAt: new Date(),
+        from: 'San Francisco',
+        to: 'Miami',
+        deliveryTime: '2025-12-01T10:00:00Z',
+        pickUpDate: new Date() ,
+        pickUpTime: '2025-12-01T12:00:00Z'      
       },
       {
         userId: req.user!._id,
@@ -361,9 +377,15 @@ export const addSampleTransfers = async (
           }
         ],
         totalAmount: 125.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'pending',
-        paymentStatus: 'pending'
+        paymentStatus: 'pending',
+        completedAt: new Date(),
+        from: 'Chicago',
+        to: 'Houston',
+        deliveryTime: '2025-12-01T10:00:00Z',
+        pickUpDate: new Date() ,
+        pickUpTime: '2025-12-01T12:00:00Z', 
       },
       {
         userId: req.user!._id,
@@ -378,10 +400,15 @@ export const addSampleTransfers = async (
         workerId: new Types.ObjectId(),
         complaintId: new Types.ObjectId(),
         totalAmount: 300.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'cancelled',
         paymentStatus: 'refunded',
-        cancelledAt: new Date()
+        cancelledAt: new Date(),
+        from: 'Chicago',
+        to: 'Houston',
+        deliveryTime: '2025-12-01T10:00:00Z',
+        pickUpDate: new Date() ,
+        pickUpTime: '2025-12-01T12:00:00Z', 
       }
     ];
 
