@@ -480,7 +480,7 @@ router.post(
  * @swagger
  * /api/v1/transfers/{id}:
  *   put:
- *     summary: Update transfer (Admin only)
+ *     summary: Update transfer
  *     tags: [Transfers]
  *     security:
  *       - bearerAuth: []
