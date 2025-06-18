@@ -4,6 +4,7 @@ import Transfer from '../models/Transfer';
 import { successResponse, errorResponse, STATUS_CODES } from '../utils/responseHandler';
 import { Types } from 'mongoose';
 import { IUser } from '../models/User';
+import ErrorResponse from '../utils/errorResponse';
 
 // Extend Express Request type to include user
 declare module 'express' {
@@ -206,7 +207,7 @@ export const createTransfer = async (
 /**
  * @desc    Update transfer (Admin only)
  * @route   PUT /api/v1/transfers/:id
- * @access  Private/Admin
+ * @access  Private
  */
 export const updateTransfer = async (
   req: Request,
@@ -214,7 +215,12 @@ export const updateTransfer = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-  // If status is being changed to completed, add completedAt
+    // update only admin or the user who created the transfer
+    if (req.user!._id.toString() !== req.body.userId && req.user!.role !== 'admin') {
+      errorResponse(res, STATUS_CODES.FORBIDDEN, 'You are not authorized to update this transfer');
+      return; 
+    }
+    // If status is being changed to completed, add completedAt
     if (req.body.status === 'completed') {
       req.body.completedAt = new Date();
     }
