@@ -148,7 +148,7 @@ export const getTransfer = async (
     }
 
     // Check if user is admin or the transfer belongs to the user
-    if (req.user?.role !== 'admin' && transfer.userId.toString() !== req.user?._id.toString()) {
+    if (!req.user || (req.user?.role !== 'admin' && transfer.userId._id.toString() !== req.user?._id.toString())) {
       errorResponse(res, STATUS_CODES.FORBIDDEN, 'Not authorized to access this transfer');
       return;
     }
