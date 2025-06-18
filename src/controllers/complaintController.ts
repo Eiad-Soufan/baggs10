@@ -178,7 +178,7 @@ export const getComplaints = async (
     const total = await Complaint.countDocuments(query);
 
     const complaints = await Complaint.find(query)
-      .populate('userId', 'name email')
+      .populate('userId', 'name email phone')
       .populate('assignedToId', 'name email')
       .populate('relatedWorkerId', 'name email')
       .populate('transferId')
