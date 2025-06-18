@@ -572,7 +572,6 @@ router.post(
  */
 router.put(
 	"/:id",
-	authorize("admin"),
 	[
 		body("status")
 			.optional()
