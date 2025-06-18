@@ -13,7 +13,7 @@ declare module 'express' {
 }
 
 interface TransferFilters {
-  status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  status?: 'pending' | 'in_progress' | 'onTheWay' | 'completed' | 'cancelled';
   paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
   sortBy?: string;
   order?: 'asc' | 'desc';
@@ -206,7 +206,7 @@ export const createTransfer = async (
 /**
  * @desc    Update transfer (Admin only)
  * @route   PUT /api/v1/transfers/:id
- * @access  Private
+ * @access  Private/Admin
  */
 export const updateTransfer = async (
   req: Request,

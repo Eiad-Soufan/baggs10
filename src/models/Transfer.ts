@@ -18,7 +18,7 @@ export interface ITransfer {
   workerId?: Types.ObjectId;
   complaintId?: Types.ObjectId;
   items: ITransferItem[];
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'in_progress' | 'onTheWay' | 'completed' | 'cancelled';
   totalAmount: number;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   deliveryDate: Date;
@@ -111,7 +111,7 @@ const TransferSchema = new mongoose.Schema<ITransfer>(
     },
     deliveryDate: {
       type: Date,
-      required: [true, 'Delivery date is required']
+      required: [true, 'Scheduled date is required']
     },
     from: {
       type: String,
@@ -142,7 +142,7 @@ const TransferSchema = new mongoose.Schema<ITransfer>(
     },
     deliveryTime: {
       type: String,
-      required: [true, 'Delivery time is required'],
+      required: [true, 'Scheduled time is required'],
       trim: true
     },
     completedAt: {

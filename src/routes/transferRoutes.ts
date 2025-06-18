@@ -160,7 +160,7 @@ router.use(protect);
  *         name: status
  *         schema:
  *           type: string
- *           enum: [pending, in_progress, completed, cancelled]
+ *           enum: [pending, in_progress, onTheWay, completed, cancelled]
  *       - in: query
  *         name: paymentStatus
  *         schema:
@@ -499,7 +499,7 @@ router.post(
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [pending, in_progress, completed, cancelled]
+ *                 enum: [pending, in_progress, onTheWay, completed, cancelled]
  *               paymentStatus:
  *                 type: string
  *                 enum: [pending, paid, failed, refunded]
@@ -575,7 +575,7 @@ router.put(
 	[
 		body("status")
 			.optional()
-			.isIn(["pending", "in_progress", "completed", "cancelled"])
+			.isIn(["pending", "in_progress","onTheWay", "completed", "cancelled"])
 			.withMessage("Invalid status"),
 		body("paymentStatus")
 			.optional()
