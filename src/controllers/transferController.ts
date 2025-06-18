@@ -4,7 +4,6 @@ import Transfer from '../models/Transfer';
 import { successResponse, errorResponse, STATUS_CODES } from '../utils/responseHandler';
 import { Types } from 'mongoose';
 import { IUser } from '../models/User';
-import ErrorResponse from '../utils/errorResponse';
 
 // Extend Express Request type to include user
 declare module 'express' {
@@ -215,11 +214,6 @@ export const updateTransfer = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // update only admin or the user who created the transfer
-    if (req.user!._id.toString() !== req.body.userId && req.user!.role !== 'admin') {
-      errorResponse(res, STATUS_CODES.FORBIDDEN, 'You are not authorized to update this transfer');
-      return; 
-    }
     // If status is being changed to completed, add completedAt
     if (req.body.status === 'completed') {
       req.body.completedAt = new Date();
@@ -235,7 +229,18 @@ export const updateTransfer = async (
       return;
     }
 
-    const transfer = await Transfer.findByIdAndUpdate(
+    // find transfer by id
+    let transfer = await Transfer.findById(req.params.id);
+    if (!transfer) {
+      errorResponse(res, STATUS_CODES.NOT_FOUND, 'Transfer not found');
+      return;  
+    }
+    if ((transfer.userId.toString() !== req.user!._id.toString()) && req.user!.role !== 'admin') {
+      errorResponse(res, STATUS_CODES.FORBIDDEN, 'You are not authorized to update this transfer')
+      return;
+    }
+
+    transfer = await Transfer.findByIdAndUpdate(
       req.params.id,
       req.body,
       {
