@@ -19,6 +19,8 @@ interface NotificationRequestBody {
   targetUsers?: Types.ObjectId[];
   isGlobal?: boolean;
   createdBy?: Types.ObjectId;
+  sendNow?: boolean;
+  sendNotificationOnDate?: Date;
 }
 
 /**
@@ -153,11 +155,31 @@ export const getMyNotifications = async (
       query['readBy.user'] = { $ne: userId };
     }
 
-    const notifications = await Notification.find(query)
+    const allNotifications = await Notification.find(query)
       .populate('createdBy', 'name email')
       .sort('-createdAt');
 
-    successResponse(res, STATUS_CODES.OK, 'Notifications retrieved successfully', notifications);
+    // Current hour for sendNotificationOnDate match
+    const currentHour = new Date().getHours();
+
+    // Filter based on sendNow or scheduled date
+    const filteredNotifications = allNotifications.filter(notification => {
+      if (notification.sendNow === true) return true;
+
+      if (notification.sendNotificationOnDate instanceof Date) {
+        const notificationDate = new Date(notification.sendNotificationOnDate);
+        return (
+          notificationDate.getFullYear() === new Date().getFullYear() &&
+          notificationDate.getMonth() === new Date().getMonth() &&
+          notificationDate.getDate() === new Date().getDate() &&
+          notificationDate.getHours() === currentHour
+        );
+      }
+
+      return false;
+    });
+
+    successResponse(res, STATUS_CODES.OK, 'Notifications retrieved successfully', filteredNotifications);
   } catch (err) {
     next(err);
   }
@@ -218,9 +240,29 @@ export const createNotification = async (
     }
 
     // Add creator to notification
-    req.body.createdBy = req.user!._id;
+    req.body.createdBy = req.user._id;
 
-    // Validate that either targetUsers is provided or isGlobal is true
+    // Ensure EITHER sendNow OR sendNotificationOnDate is provided — not both, not neither
+    const { sendNow, sendNotificationOnDate } = req.body;
+
+    const hasSendNow = typeof sendNow === 'boolean' && sendNow === true;
+    const hasScheduleDate = !!sendNotificationOnDate;
+
+    if ((hasSendNow && hasScheduleDate) || (!hasSendNow && !hasScheduleDate)) {
+      errorResponse(
+        res,
+        STATUS_CODES.BAD_REQUEST,
+        'You must either set "sendNow" to true or provide "sendNotificationOnDate" — but not both.'
+      );
+      return;
+    }
+
+    // Automatically set sendNow to false if schedule date is provided
+    if (hasScheduleDate) {
+      req.body.sendNow = false;
+    }
+
+    // Validate targeting
     if (!req.body.isGlobal && (!req.body.targetUsers || req.body.targetUsers.length === 0)) {
       errorResponse(res, STATUS_CODES.BAD_REQUEST, 'Please provide target users or set as global notification');
       return;
