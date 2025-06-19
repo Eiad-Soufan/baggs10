@@ -18,6 +18,7 @@ export interface INotification {
 	updatedAt: Date;
 	sendNotificationOnDate?: Date;
 	sendNow?: boolean;
+	redirectTo?: string;
 }
 
 const NotificationSchema = new mongoose.Schema<INotification>(
@@ -77,6 +78,10 @@ const NotificationSchema = new mongoose.Schema<INotification>(
 			type: Boolean,
 			default: true,
 		},
+		redirectTo: {
+			type: String,
+			trim: true,
+			maxlength: [500, "Redirect URL cannot be more than 500 characters"],},
 	},
 	{
 		timestamps: true,

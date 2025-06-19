@@ -21,6 +21,7 @@ interface NotificationRequestBody {
   createdBy?: Types.ObjectId;
   sendNow?: boolean;
   sendNotificationOnDate?: Date;
+  redirectTo?: string;
 }
 
 /**

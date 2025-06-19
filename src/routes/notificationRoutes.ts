@@ -312,6 +312,7 @@ router.post(
     body("targetUsers").optional().isArray(),
     body("isGlobal").optional().isBoolean(),
     body("expiresAt").optional().isISO8601(),
+    body("redirectTo").optional().isString(),
     body("sendNow").optional().isBoolean(),
     body("sendNotificationOnDate").optional().isISO8601(),
     body().custom(mutuallyExclusiveSendOptions),
