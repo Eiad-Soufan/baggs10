@@ -2,6 +2,21 @@ import { Request, Response, NextFunction } from "express";
 import Ad from "../models/Ad";
 import ErrorResponse from "../utils/errorResponse";
 
+interface PaginationResult {
+	next?: {
+		page: number;
+		limit: number;
+	};
+	prev?: {
+		page: number;
+		limit: number;
+	};
+	total: number;
+	page: number;
+	limit: number;
+	pageCount: number;
+}
+
 // @desc    Create new ad
 // @route   POST /api/v1/ads
 // @access  Private/Admin
@@ -33,7 +48,17 @@ export const getAds = async (
 	res: Response,
 	next: NextFunction
 ) => {
-	const ads = await Ad.find({ expireDate: { $gt: new Date() } }).populate({
+	const ads = await Ad.find({
+		$and: [
+			{
+				$or: [
+					{ startAt: { $exists: false } },
+					{ startAt: { $lte: new Date() } },
+				],
+			},
+			{ expireDate: { $gt: new Date() } },
+		],
+	}).populate({
 		path: "createdByAdminId",
 		select: "name email",
 	});
@@ -41,6 +66,71 @@ export const getAds = async (
 	res.status(200).json({
 		success: true,
 		count: ads.length,
+		data: ads,
+	});
+};
+
+// @desc    Get all ads (Admin only)
+// @route   GET /api/v1/getAllAds
+// @access  Private/Admin
+export const getAllAds = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const {
+		page = "1",
+		limit = "10",
+		sortBy = "createdAt",
+		order = "desc",
+	} = req.query;
+	if (!req.user || req.user.role !== "admin") {
+		return next(new ErrorResponse("Not authorized to access this route", 401));
+	}
+	// Pagination
+	const pageNum = parseInt(page as string, 10);
+	const limitNum = parseInt(limit as string, 10);
+	const startIndex = (pageNum - 1) * limitNum;
+	const endIndex = pageNum * limitNum;
+	const total = await Ad.countDocuments({});
+	// Pagination result
+	const pagination: PaginationResult = {
+		total,
+		page: pageNum,
+		limit: limitNum,
+		pageCount: Math.ceil(total / limitNum),
+	};
+
+	// Add next page if available
+	if (endIndex < total) {
+		pagination.next = {
+			page: pageNum + 1,
+			limit: limitNum,
+		};
+	}
+
+	// Add previous page if available
+	if (startIndex > 0) {
+		pagination.prev = {
+			page: pageNum - 1,
+			limit: limitNum,
+		};
+	}
+
+	// Execute query with pagination and sorting
+	const ads = await Ad.find()
+		.populate({
+			path: "createdByAdminId",
+			select: "name email",
+		})
+		.sort({ [sortBy as string]: order === "desc" ? -1 : 1 })
+		.skip(startIndex)
+		.limit(limitNum);
+
+	res.status(200).json({
+		success: true,
+		count: ads.length,
+		pagination,
 		data: ads,
 	});
 };
