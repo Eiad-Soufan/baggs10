@@ -245,31 +245,43 @@ export const deleteAd = async (
  * @access  Private/Admin
  */
 export const getAdsStats = async (
-	req: Request,
-	res: Response,
-	next: NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
-	// Only admin can access this route
-	if (!req.user || req.user.role !== "admin") {
-		return next(new ErrorResponse("Not authorized to access this route", 403));
-	}
-	try {
-		const totalAds = await Ad.countDocuments({});
-		const activeAds = await Ad.countDocuments({
-			expireDate: { $gt: new Date() },
-		});
-		const deactiveAds = await Ad.countDocuments({
-			expireDate: { $lte: new Date() },
-		});
-		res.status(200).json({
-			success: true,
-			data: {
-				totalAds,
-				activeAds,
-				deactiveAds,
-			},
-		});
-	} catch (err) {
-		next(err);
-	}
+  if (!req.user || req.user.role !== 'admin') {
+    return next(new ErrorResponse('Not authorized to access this route', 403));
+  }
+
+  try {
+    const now = new Date();
+
+    const totalAds = await Ad.countDocuments({});
+
+    const activeAds = await Ad.countDocuments({
+      $and: [
+        { expireDate: { $gt: now } },
+        {
+          $or: [
+            { startAt: { $exists: false } }, // startAt does not exist
+            { startAt: { $lte: now } }       // or it's already started
+          ]
+        }
+      ]
+    });
+
+    const deactiveAds = totalAds - activeAds;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalAds,
+        activeAds,
+        deactiveAds,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
 };
+
