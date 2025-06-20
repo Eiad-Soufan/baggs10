@@ -4,6 +4,7 @@ import Transfer from '../models/Transfer';
 import { successResponse, errorResponse, STATUS_CODES } from '../utils/responseHandler';
 import { Types } from 'mongoose';
 import { IUser } from '../models/User';
+import Notification from '../models/Notification';
 
 // Extend Express Request type to include user
 declare module 'express' {
@@ -251,6 +252,24 @@ export const updateTransfer = async (
     if ((transfer.userId.toString() !== req.user!._id.toString()) && req.user!.role !== 'admin') {
       errorResponse(res, STATUS_CODES.FORBIDDEN, 'You are not authorized to update this transfer')
       return;
+    }
+
+     // if status is being changed create notification for the user
+    if (req.body.status && req.body.status !== transfer.status) {
+      const notification = new Notification({
+        userId: transfer.userId._id,
+        message: `Your transfer with ID #${transfer._id} has been updated to ${req.body.status}.`,
+        createdBy: req.user!._id,
+        title: `transfer Update: #${transfer._id}`,
+        type: "info",
+        targetUsers: [transfer.userId._id],
+        isGlobal: false,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
+        updatedAt: new Date(),
+        sendNow: true,
+        redirectTo:   `/my-transfers/${transfer._id}`,
+      });
+      await notification.save();
     }
 
     transfer = await Transfer.findByIdAndUpdate(

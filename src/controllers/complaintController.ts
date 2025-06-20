@@ -6,6 +6,7 @@ import { Types } from 'mongoose';
 import { IUser } from '../models/User';
 import ErrorResponse from '../utils/errorResponse';
 import Transfer from '../models/Transfer';
+import Notification from '../models/Notification';
 
 // Define complaint status enum
 const ComplaintStatus = {
@@ -392,6 +393,24 @@ export const updateComplaint = async (
     if (req.body.status === ComplaintStatus.CLOSED) {
       req.body.closedAt = new Date();
       req.body.closedByAdminId = req.user!._id;
+    }
+
+    // if status is being changed create notification for the user
+    if (req.body.status && req.body.status !== complaint.status) {
+      const notification = new Notification({
+        userId: complaint.userId._id,
+        message: `Your complaint status with title ${complaint.title} has been updated to ${req.body.status}.`,
+        createdBy: req.user!._id,
+        title: `Complaint Update: ${complaint.title}`,
+        type: "info",
+        targetUsers: [complaint.userId._id],
+        isGlobal: false,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
+        updatedAt: new Date(),
+        sendNow: true,
+        redirectTo:  `/customer-support/${complaint._id}`,
+      });
+      await notification.save();
     }
 
     complaint = await Complaint.findByIdAndUpdate(
