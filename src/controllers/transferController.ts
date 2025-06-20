@@ -195,7 +195,7 @@ export const createTransfer = async (
 
     // Add userId to the payload
     req.body.userId = req.user!._id;
-
+    req.body.status = 'pending'; // Default status for new transfers
     const transfer = await Transfer.create(req.body);
     successResponse(res, STATUS_CODES.CREATED, 'Transfer created successfully', transfer);
   } catch (err) {
@@ -223,6 +223,19 @@ export const updateTransfer = async (
     if (req.body.status === 'cancelled') {
       req.body.cancelledAt = new Date();
     }
+
+    if (req.body.status === 'in_progress') {
+      req.body.acceptedAt = new Date();
+    }
+
+    if (req.body.workerId) {
+      req.body.assigneedAt = new Date();
+    }
+
+    if (req.body.status === 'onTheWay') {
+      req.body.onTheWayAt = new Date();
+    }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       errorResponse(res, STATUS_CODES.VALIDATION_ERROR, 'Validation error', errors.array());

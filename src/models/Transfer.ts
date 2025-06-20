@@ -34,6 +34,9 @@ export interface ITransfer {
   rating?: ITransferRating;
   createdAt: Date;
   updatedAt: Date;
+  assigneedAt?: Date;
+  onTheWayAt?: Date;
+  acceptedAt?: Date;
 }
 
 const TransferItemSchema = new mongoose.Schema<ITransferItem>({
@@ -149,6 +152,15 @@ const TransferSchema = new mongoose.Schema<ITransfer>(
       type: Date
     },
     cancelledAt: {
+      type: Date
+    },
+    assigneedAt: {
+      type: Date
+    },
+    onTheWayAt: {
+      type: Date
+    },
+    acceptedAt: {
       type: Date
     },
     rating: TransferRatingSchema
