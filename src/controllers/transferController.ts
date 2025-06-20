@@ -258,9 +258,9 @@ export const updateTransfer = async (
     if (req.body.status && req.body.status !== transfer.status) {
       const notification = new Notification({
         userId: transfer.userId._id,
-        message: `Your transfer with ID #${transfer._id} has been updated to ${req.body.status}.`,
+        message: `Your transfer with ID #${transfer._id?.toString().substring(0, 6)} has been updated to ${req.body.status}.`,
         createdBy: req.user!._id,
-        title: `transfer Update: #${transfer._id}`,
+        title: `transfer Update: #${transfer._id?.toString().substring(0, 6)}`,
         type: "info",
         targetUsers: [transfer.userId._id],
         isGlobal: false,
