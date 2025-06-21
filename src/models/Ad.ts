@@ -9,6 +9,7 @@ export interface IAd extends Document {
   updatedAt: Date;
   startAt?: Date;
   title: string;
+  status?: 'active' | 'deactive';
 }
 
 const AdSchema = new Schema<IAd>(
@@ -38,6 +39,11 @@ const AdSchema = new Schema<IAd>(
       type: String,
       trim: true,
       required: [true, 'Title is required'],
+    },
+    status: {
+      type: String,
+      enum: ['active', 'deactive'],
+      default: 'active',
     },
   },
   {

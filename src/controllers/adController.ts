@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import Ad from "../models/Ad";
+import Ad, { IAd } from "../models/Ad";
 import ErrorResponse from "../utils/errorResponse";
 
 interface PaginationResult {
@@ -63,6 +63,21 @@ export const getAds = async (
 		select: "name email",
 	});
 
+	// Update expired ads to deactive if needed
+	const now = new Date();
+	await Promise.all(
+		ads.map(async (ad: IAd) => {
+			if (
+				ad.expireDate &&
+				new Date(ad.expireDate) < now &&
+				ad.status !== "deactive"
+			) {
+				ad.status = "deactive";
+				await ad.save();
+			}
+		})
+	);
+
 	res.status(200).json({
 		success: true,
 		count: ads.length,
@@ -84,16 +99,17 @@ export const getAllAds = async (
 		sortBy = "createdAt",
 		order = "desc",
 	} = req.query;
+
 	if (!req.user || req.user.role !== "admin") {
 		return next(new ErrorResponse("Not authorized to access this route", 401));
 	}
-	// Pagination
+
 	const pageNum = parseInt(page as string, 10);
 	const limitNum = parseInt(limit as string, 10);
 	const startIndex = (pageNum - 1) * limitNum;
 	const endIndex = pageNum * limitNum;
 	const total = await Ad.countDocuments({});
-	// Pagination result
+
 	const pagination: PaginationResult = {
 		total,
 		page: pageNum,
@@ -101,7 +117,6 @@ export const getAllAds = async (
 		pageCount: Math.ceil(total / limitNum),
 	};
 
-	// Add next page if available
 	if (endIndex < total) {
 		pagination.next = {
 			page: pageNum + 1,
@@ -109,7 +124,6 @@ export const getAllAds = async (
 		};
 	}
 
-	// Add previous page if available
 	if (startIndex > 0) {
 		pagination.prev = {
 			page: pageNum - 1,
@@ -117,7 +131,7 @@ export const getAllAds = async (
 		};
 	}
 
-	// Execute query with pagination and sorting
+	// Fetch ads
 	const ads = await Ad.find()
 		.populate({
 			path: "createdByAdminId",
@@ -126,6 +140,21 @@ export const getAllAds = async (
 		.sort({ [sortBy as string]: order === "desc" ? -1 : 1 })
 		.skip(startIndex)
 		.limit(limitNum);
+
+	// Update expired ads to deactive if needed
+	const now = new Date();
+	await Promise.all(
+		ads.map(async (ad: IAd) => {
+			if (
+				ad.expireDate &&
+				new Date(ad.expireDate) < now &&
+				ad.status !== "deactive"
+			) {
+				ad.status = "deactive";
+				await ad.save();
+			}
+		})
+	);
 
 	res.status(200).json({
 		success: true,
@@ -245,43 +274,42 @@ export const deleteAd = async (
  * @access  Private/Admin
  */
 export const getAdsStats = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+	req: Request,
+	res: Response,
+	next: NextFunction
 ): Promise<void> => {
-  if (!req.user || req.user.role !== 'admin') {
-    return next(new ErrorResponse('Not authorized to access this route', 403));
-  }
+	if (!req.user || req.user.role !== "admin") {
+		return next(new ErrorResponse("Not authorized to access this route", 403));
+	}
 
-  try {
-    const now = new Date();
+	try {
+		const now = new Date();
 
-    const totalAds = await Ad.countDocuments({});
+		const totalAds = await Ad.countDocuments({});
 
-    const activeAds = await Ad.countDocuments({
-      $and: [
-        { expireDate: { $gt: now } },
-        {
-          $or: [
-            { startAt: { $exists: false } }, // startAt does not exist
-            { startAt: { $lte: now } }       // or it's already started
-          ]
-        }
-      ]
-    });
+		const activeAds = await Ad.countDocuments({
+			$and: [
+				{ expireDate: { $gt: now } },
+				{
+					$or: [
+						{ startAt: { $exists: false } }, // startAt does not exist
+						{ startAt: { $lte: now } }, // or it's already started
+					],
+				},
+			],
+		});
 
-    const deactiveAds = totalAds - activeAds;
+		const deactiveAds = totalAds - activeAds;
 
-    res.status(200).json({
-      success: true,
-      data: {
-        totalAds,
-        activeAds,
-        deactiveAds,
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
+		res.status(200).json({
+			success: true,
+			data: {
+				totalAds,
+				activeAds,
+				deactiveAds,
+			},
+		});
+	} catch (err) {
+		next(err);
+	}
 };
-
