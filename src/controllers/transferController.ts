@@ -4,6 +4,7 @@ import Transfer from '../models/Transfer';
 import { successResponse, errorResponse, STATUS_CODES } from '../utils/responseHandler';
 import { Types } from 'mongoose';
 import { IUser } from '../models/User';
+import Notification from '../models/Notification';
 
 // Extend Express Request type to include user
 declare module 'express' {
@@ -13,7 +14,7 @@ declare module 'express' {
 }
 
 interface TransferFilters {
-  status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  status?: 'pending' | 'in_progress' | 'onTheWay' | 'completed' | 'cancelled';
   paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
   sortBy?: string;
   order?: 'asc' | 'desc';
@@ -117,7 +118,7 @@ export const getMyTransfers = async (
     const transfers = await Transfer.find({ userId: req.user!._id })
       .populate('workerId', 'name email')
       //INFO check letter for serviceId population
-      // .populate('serviceId', 'name price')
+      .populate('complaintId', '_id title status')
       .sort('-createdAt');
 
     successResponse(res, STATUS_CODES.OK, 'Your transfers retrieved successfully', transfers);
@@ -148,7 +149,7 @@ export const getTransfer = async (
     }
 
     // Check if user is admin or the transfer belongs to the user
-    if (req.user?.role !== 'admin' && transfer.userId.toString() !== req.user?._id.toString()) {
+    if (!req.user || (req.user?.role !== 'admin' && transfer.userId._id.toString() !== req.user?._id.toString())) {
       errorResponse(res, STATUS_CODES.FORBIDDEN, 'Not authorized to access this transfer');
       return;
     }
@@ -195,7 +196,7 @@ export const createTransfer = async (
 
     // Add userId to the payload
     req.body.userId = req.user!._id;
-
+    req.body.status = 'pending'; // Default status for new transfers
     const transfer = await Transfer.create(req.body);
     successResponse(res, STATUS_CODES.CREATED, 'Transfer created successfully', transfer);
   } catch (err) {
@@ -214,7 +215,7 @@ export const updateTransfer = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-  // If status is being changed to completed, add completedAt
+    // If status is being changed to completed, add completedAt
     if (req.body.status === 'completed') {
       req.body.completedAt = new Date();
     }
@@ -223,13 +224,57 @@ export const updateTransfer = async (
     if (req.body.status === 'cancelled') {
       req.body.cancelledAt = new Date();
     }
+    
+    if (req.body.workerId) {
+      req.body.assigneedAt = new Date();
+      req.body.status = 'in_progress';
+      req.body.acceptedAt = new Date();
+    }
+
+    if (req.body.status === 'in_progress') {
+      req.body.acceptedAt = new Date();
+    }
+
+    if (req.body.status === 'onTheWay') {
+      req.body.onTheWayAt = new Date();
+    }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       errorResponse(res, STATUS_CODES.VALIDATION_ERROR, 'Validation error', errors.array());
       return;
     }
 
-    const transfer = await Transfer.findByIdAndUpdate(
+    // find transfer by id
+    let transfer = await Transfer.findById(req.params.id);
+    if (!transfer) {
+      errorResponse(res, STATUS_CODES.NOT_FOUND, 'Transfer not found');
+      return;  
+    }
+    if ((transfer.userId.toString() !== req.user!._id.toString()) && req.user!.role !== 'admin') {
+      errorResponse(res, STATUS_CODES.FORBIDDEN, 'You are not authorized to update this transfer')
+      return;
+    }
+
+     // if status is being changed create notification for the user
+    if (req.body.status && req.body.status !== transfer.status) {
+      const notification = new Notification({
+        userId: transfer.userId._id,
+        message: `Your transfer with ID #${transfer._id?.toString().substring(0, 6)} has been updated to ${req.body.status}.`,
+        createdBy: req.user!._id,
+        title: `transfer Update: #${transfer._id?.toString().substring(0, 6)}`,
+        type: "info",
+        targetUsers: [transfer.userId._id],
+        isGlobal: false,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
+        updatedAt: new Date(),
+        sendNow: true,
+        redirectTo:   `/my-transfers/${transfer._id}`,
+      });
+      await notification.save();
+    }
+
+    transfer = await Transfer.findByIdAndUpdate(
       req.params.id,
       req.body,
       {
@@ -306,10 +351,15 @@ export const addSampleTransfers = async (
         ],
         workerId: new Types.ObjectId(),
         totalAmount: 150.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'completed',
         paymentStatus: 'paid',
-        completedAt: new Date()
+        completedAt: new Date(),
+        from: '123 Main St, City A',
+        to: '456 Elm St, City B',
+        deliveryTime: '2025-12-01T10:00:00Z',
+        pickUpDate: new Date(),
+        pickUpTime: '2025-12-01T12:00:00Z',
       },
       {
         userId: req.user!._id,
@@ -323,9 +373,15 @@ export const addSampleTransfers = async (
         ],
         workerId: new Types.ObjectId(),
         totalAmount: 200.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'in_progress',
-        paymentStatus: 'paid'
+        paymentStatus: 'paid',
+        completedAt: new Date(),
+        from: 'New York',
+        to: 'Los Angeles',
+        deliveryTime: '2025-12-01T10:00:00Z',
+        pickUpDate: new Date() ,
+        pickUpTime: '2025-12-01T12:00:00Z',
       },
       {
         userId: req.user!._id,
@@ -339,10 +395,15 @@ export const addSampleTransfers = async (
         ],
         workerId: new Types.ObjectId(),
         totalAmount: 175.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'completed',
         paymentStatus: 'paid',
-        completedAt: new Date()
+        completedAt: new Date(),
+        from: 'San Francisco',
+        to: 'Miami',
+        deliveryTime: '2025-12-01T10:00:00Z',
+        pickUpDate: new Date() ,
+        pickUpTime: '2025-12-01T12:00:00Z'      
       },
       {
         userId: req.user!._id,
@@ -361,9 +422,15 @@ export const addSampleTransfers = async (
           }
         ],
         totalAmount: 125.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'pending',
-        paymentStatus: 'pending'
+        paymentStatus: 'pending',
+        completedAt: new Date(),
+        from: 'Chicago',
+        to: 'Houston',
+        deliveryTime: '2025-12-01T10:00:00Z',
+        pickUpDate: new Date() ,
+        pickUpTime: '2025-12-01T12:00:00Z', 
       },
       {
         userId: req.user!._id,
@@ -378,10 +445,15 @@ export const addSampleTransfers = async (
         workerId: new Types.ObjectId(),
         complaintId: new Types.ObjectId(),
         totalAmount: 300.00,
-        scheduledDate: new Date(),
+        deliveryDate: new Date(),
         status: 'cancelled',
         paymentStatus: 'refunded',
-        cancelledAt: new Date()
+        cancelledAt: new Date(),
+        from: 'Chicago',
+        to: 'Houston',
+        deliveryTime: '2025-12-01T10:00:00Z',
+        pickUpDate: new Date() ,
+        pickUpTime: '2025-12-01T12:00:00Z', 
       }
     ];
 

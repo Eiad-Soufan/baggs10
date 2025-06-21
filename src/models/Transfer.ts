@@ -18,21 +18,25 @@ export interface ITransfer {
   workerId?: Types.ObjectId;
   complaintId?: Types.ObjectId;
   items: ITransferItem[];
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'in_progress' | 'onTheWay' | 'completed' | 'cancelled';
   totalAmount: number;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  scheduledDate: Date;
+  deliveryDate: Date;
   from: string;
   to: string;
   flightGate?: string;
   flightNumber?: string;
   pickUpDate: Date;
   pickUpTime: string;
+  deliveryTime: string;
   completedAt?: Date;
   cancelledAt?: Date;
   rating?: ITransferRating;
   createdAt: Date;
   updatedAt: Date;
+  assigneedAt?: Date;
+  onTheWayAt?: Date;
+  acceptedAt?: Date;
 }
 
 const TransferItemSchema = new mongoose.Schema<ITransferItem>({
@@ -95,7 +99,7 @@ const TransferSchema = new mongoose.Schema<ITransfer>(
     items: [TransferItemSchema],
     status: {
       type: String,
-      enum: ['pending', 'in_progress', 'completed', 'cancelled'],
+      enum: ['pending', 'in_progress', 'onTheWay', 'completed', 'cancelled'],
       default: 'pending'
     },
     totalAmount: {
@@ -108,7 +112,7 @@ const TransferSchema = new mongoose.Schema<ITransfer>(
       enum: ['pending', 'paid', 'failed', 'refunded'],
       default: 'pending'
     },
-    scheduledDate: {
+    deliveryDate: {
       type: Date,
       required: [true, 'Scheduled date is required']
     },
@@ -139,10 +143,24 @@ const TransferSchema = new mongoose.Schema<ITransfer>(
       required: [true, 'Pick up time is required'],
       trim: true
     },
+    deliveryTime: {
+      type: String,
+      required: [true, 'Scheduled time is required'],
+      trim: true
+    },
     completedAt: {
       type: Date
     },
     cancelledAt: {
+      type: Date
+    },
+    assigneedAt: {
+      type: Date
+    },
+    onTheWayAt: {
+      type: Date
+    },
+    acceptedAt: {
       type: Date
     },
     rating: TransferRatingSchema
@@ -158,7 +176,7 @@ TransferSchema.index({ workerId: 1 });
 TransferSchema.index({ complaintId: 1 });
 TransferSchema.index({ status: 1 });
 TransferSchema.index({ paymentStatus: 1 });
-TransferSchema.index({ scheduledDate: 1 });
+TransferSchema.index({ deliveryDate: 1 });
 TransferSchema.index({ createdAt: -1 });
 
 const Transfer = mongoose.model<ITransfer>('Transfer', TransferSchema);

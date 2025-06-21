@@ -12,6 +12,7 @@ import {
 } from "../controllers/notificationController";
 
 import { protect, authorize } from "../middleware/auth";
+import { mutuallyExclusiveSendOptions } from "../middleware/notification";
 
 const router: Router = express.Router();
 
@@ -178,13 +179,15 @@ router.patch('/mark-all-read', markAllAsRead);
  *         schema:
  *           type: string
  *           enum: [info, warning, error, success]
+ *         description: Filter notifications by type
  *       - in: query
  *         name: read
  *         schema:
  *           type: boolean
+ *         description: Filter by read/unread status
  *     responses:
  *       200:
- *         description: List of user's notifications
+ *         description: List of user's notifications (filtered by type, read status, and scheduled timing)
  *         content:
  *           application/json:
  *             schema:
@@ -270,6 +273,13 @@ router.get("/:id", getNotification);
  *               expiresAt:
  *                 type: string
  *                 format: date-time
+ *               sendNow:
+ *                 type: boolean
+ *                 description: Send the notification immediately
+ *               sendNotificationOnDate:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Date and time to send the notification in the future
  *     responses:
  *       201:
  *         description: Notification created successfully
@@ -290,20 +300,24 @@ router.get("/:id", getNotification);
  *         description: Forbidden - Admin access required
  */
 router.post(
-	"/",
-	authorize("admin"),
-	[
-		body("title").not().isEmpty().withMessage("Title is required"),
-		body("message").not().isEmpty().withMessage("Message is required"),
-		body("type")
-			.optional()
-			.isIn(["info", "warning", "error", "success"])
-			.withMessage("Invalid notification type"),
-		body("targetUsers").optional().isArray(),
-		body("isGlobal").optional().isBoolean(),
-		body("expiresAt").optional().isISO8601(),
-	],
-	createNotification
+  "/",
+  authorize("admin"),
+  [
+    body("title").notEmpty().withMessage("Title is required"),
+    body("message").notEmpty().withMessage("Message is required"),
+    body("type")
+      .optional()
+      .isIn(["info", "warning", "error", "success"])
+      .withMessage("Invalid notification type"),
+    body("targetUsers").optional().isArray(),
+    body("isGlobal").optional().isBoolean(),
+    body("expiresAt").optional().isISO8601(),
+    body("redirectTo").optional().isString(),
+    body("sendNow").optional().isBoolean(),
+    body("sendNotificationOnDate").optional().isISO8601(),
+    body().custom(mutuallyExclusiveSendOptions),
+  ],
+  createNotification
 );
 
 /**

@@ -5,7 +5,8 @@ import {
   getUser,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  deleteUserByNameEmailAndPassword
 } from '../controllers/userController';
 
 import { protect, authorize } from '../middleware/auth';
@@ -13,7 +14,7 @@ import { protect, authorize } from '../middleware/auth';
 const router = express.Router();
 
 // Apply protection to all routes
-router.use(protect);
+// router.use(protect);
 // Remove global admin authorization for all routes
 // router.use(authorize('admin'));
 
@@ -99,7 +100,60 @@ router.use(protect);
  *       403:
  *         description: Forbidden
  */
-router.get('/',authorize('admin'), getUsers);
+router.get('/', protect, authorize('admin'), getUsers);
+
+
+
+/**
+ * @swagger
+ * /api/v1/users/delete:
+ *   delete:
+ *     summary: Delete user by name, email, and password
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: User's name
+ *               email:
+ *                 type: string
+ *                 description: User's email
+ *               password:
+ *                 type: string
+ *                 description: User's password
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       400:
+ *         description: Bad request - missing or invalid input
+ *       401:
+ *         description: Invalid password
+ *       404:
+ *         description: User not found
+ */
+router.delete(
+  '/delete',
+  [
+    body('name').not().isEmpty().withMessage('Name is required'),
+    body('email').isEmail().withMessage('Please include a valid email'),
+    body('password')
+      .isLength({ min: 6 })
+      .withMessage('Password must be at least 6 characters')
+  ],
+  deleteUserByNameEmailAndPassword
+  );
+
 
 /**
  * @swagger
@@ -126,7 +180,7 @@ router.get('/',authorize('admin'), getUsers);
  *       403:
  *         description: Forbidden
  */
-router.get('/:id', getUser);
+router.get('/:id', protect, getUser);
 
 /**
  * @swagger
@@ -192,6 +246,7 @@ router.get('/:id', getUser);
  */
 router.post(
   '/',
+  protect,
   [
     body('name').not().isEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Please include a valid email'),
@@ -280,6 +335,7 @@ router.post(
  */
 router.put(
   '/:id',
+   protect,
   [
     body('email').optional().isEmail().withMessage('Please include a valid email'),
     body('phone').optional(),
@@ -329,6 +385,6 @@ router.put(
  *       403:
  *         description: Forbidden. Only admin or the user themselves can delete.
  */
-router.delete('/:id', deleteUser);
+router.delete('/:id',  protect, deleteUser);
 
 export default router; 
