@@ -18,6 +18,7 @@ export interface IUser {
 	specialization?: string;
 	rating?: number;
 	totalTransfers?: number;
+	transferAveragePerMonth?: number; 
 	// Customer specific fields
 	address?: string;
 	informationPreference: ("email" | "sms" | "call")[];
@@ -134,6 +135,10 @@ const UserSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
 		pushNotification: {
 			type: Boolean,
 			default: true,
+		},
+		transferAveragePerMonth: {
+			type: Number,
+			default: 0,
 		},
 	},
 	{
