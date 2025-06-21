@@ -479,7 +479,7 @@ export const updateComplaint = async (
 		}
 
 		// If status is being changed to closed, add closedAt and closedByAdminId
-		if (req.body.status === ComplaintStatus.CLOSED) {
+		if (req.body.status === ComplaintStatus.CLOSED || req.body.status === ComplaintStatus.RESOLVED) {
 			req.body.closedAt = new Date();
 			req.body.closedByAdminId = req.user!._id;
 		}
