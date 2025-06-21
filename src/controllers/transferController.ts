@@ -231,6 +231,7 @@ export const updateTransfer = async (
 
     if (req.body.workerId) {
       req.body.assigneedAt = new Date();
+      req.body.status = 'in_progress';
     }
 
     if (req.body.status === 'onTheWay') {
