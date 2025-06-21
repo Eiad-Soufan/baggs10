@@ -118,7 +118,7 @@ export const getMyTransfers = async (
     const transfers = await Transfer.find({ userId: req.user!._id })
       .populate('workerId', 'name email')
       //INFO check letter for serviceId population
-      // .populate('serviceId', 'name price')
+      .populate('complaintId', '_id title status')
       .sort('-createdAt');
 
     successResponse(res, STATUS_CODES.OK, 'Your transfers retrieved successfully', transfers);
