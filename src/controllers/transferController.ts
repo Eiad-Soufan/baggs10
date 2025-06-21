@@ -224,14 +224,15 @@ export const updateTransfer = async (
     if (req.body.status === 'cancelled') {
       req.body.cancelledAt = new Date();
     }
-
-    if (req.body.status === 'in_progress') {
-      req.body.acceptedAt = new Date();
-    }
-
+    
     if (req.body.workerId) {
       req.body.assigneedAt = new Date();
       req.body.status = 'in_progress';
+      req.body.acceptedAt = new Date();
+    }
+
+    if (req.body.status === 'in_progress') {
+      req.body.acceptedAt = new Date();
     }
 
     if (req.body.status === 'onTheWay') {
