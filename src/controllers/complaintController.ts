@@ -289,6 +289,13 @@ export const createComplaint = async (
     req.body.userId = req.user!._id;
 
     const complaint = await Complaint.create(req.body);
+
+    if (complaint.transferId) {
+      await Transfer.findByIdAndUpdate(complaint.transferId, {
+        complaintId: complaint._id,
+      });
+    }
+
     successResponse(res, STATUS_CODES.CREATED, 'Complaint created successfully', complaint);
   } catch (err) {
     next(err);
