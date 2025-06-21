@@ -111,7 +111,7 @@ export const createUser = async (
 /**
  * @desc    Update user
  * @route   PUT /api/v1/users/:id
- * @access  Private/Admin
+ * @access  Private 
  */
 export const updateUser = async (
   req: Request,
