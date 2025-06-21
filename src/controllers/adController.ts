@@ -70,7 +70,7 @@ export const getAds = async (
 			if (
 				ad.expireDate &&
 				new Date(ad.expireDate) < now &&
-				ad.status !== "deactive"
+				ad?.status !== "deactive"
 			) {
 				ad.status = "deactive";
 				await ad.save();
@@ -148,7 +148,7 @@ export const getAllAds = async (
 			if (
 				ad.expireDate &&
 				new Date(ad.expireDate) < now &&
-				ad.status !== "deactive"
+				ad?.status !== "deactive"
 			) {
 				ad.status = "deactive";
 				await ad.save();
