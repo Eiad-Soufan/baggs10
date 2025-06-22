@@ -91,7 +91,7 @@ export const getTransfers = async (
 
 		const transfers = await Transfer.find(query)
 			.populate("userId", "name email")
-			.populate("workerId", "name email isAvailable status")
+			.populate("workerId", "name email isAvailable status phoneNumber")
 			.populate("complaintId")
 			.sort({ [sortBy]: order === "desc" ? -1 : 1 })
 			.skip(startIndex)
