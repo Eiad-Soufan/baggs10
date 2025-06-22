@@ -141,7 +141,7 @@ export const getMe = async (
 		const monthlyTransfers = await Transfer.aggregate([
 			{
 				$match: {
-					user: req.user?._id,
+					userId: req.user?._id,
 				},
 			},
 			{
@@ -163,7 +163,7 @@ export const getMe = async (
 		const averagePerMonth =
 			numberOfMonths > 0 ? totalAmount / numberOfMonths : 0;
 		const totalTransfers = await Transfer.countDocuments({
-			user: req.user?._id,
+			userId: req.user?._id,
 		});
 		res.status(200).json({
 			success: true,
