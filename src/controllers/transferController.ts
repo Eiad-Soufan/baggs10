@@ -19,7 +19,7 @@ declare module "express" {
 }
 
 interface TransferFilters {
-	status?: "pending" | "in_progress" | "onTheWay" | "completed" | "cancelled";
+	status?: "pending" | "in_progress" | "in_transit" | "onTheWay" | "completed" | "cancelled";
 	paymentStatus?: "pending" | "paid" | "failed" | "refunded";
 	sortBy?: string;
 	order?: "asc" | "desc";
@@ -268,6 +268,10 @@ export const updateTransfer = async (
 		// If status is being changed to cancelled, add cancelledAt
 		if (req.body.status === "cancelled") {
 			req.body.cancelledAt = new Date();
+		}
+
+		if (req.body.status === "in_transit") {
+			req.body.inTransitAt = new Date();
 		}
 
 		if (req.body.workerId) {

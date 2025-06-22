@@ -18,7 +18,7 @@ export interface ITransfer {
   workerId?: Types.ObjectId;
   complaintId?: Types.ObjectId;
   items: ITransferItem[];
-  status: 'pending' | 'in_progress' | 'onTheWay' | 'completed' | 'cancelled';
+  status: 'pending' | 'in_progress' | 'in_transit' | 'onTheWay' | 'completed' | 'cancelled';
   totalAmount: number;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   deliveryDate: Date;
@@ -37,6 +37,7 @@ export interface ITransfer {
   assigneedAt?: Date;
   onTheWayAt?: Date;
   acceptedAt?: Date;
+  inTransitAt?: Date;
 }
 
 const TransferItemSchema = new mongoose.Schema<ITransferItem>({
@@ -99,7 +100,7 @@ const TransferSchema = new mongoose.Schema<ITransfer>(
     items: [TransferItemSchema],
     status: {
       type: String,
-      enum: ['pending', 'in_progress', 'onTheWay', 'completed', 'cancelled'],
+      enum: ['pending', 'in_progress', 'in_transit', 'onTheWay', 'completed', 'cancelled'],
       default: 'pending'
     },
     totalAmount: {
@@ -161,6 +162,9 @@ const TransferSchema = new mongoose.Schema<ITransfer>(
       type: Date
     },
     acceptedAt: {
+      type: Date
+    },
+    inTransitAt: {
       type: Date
     },
     rating: TransferRatingSchema

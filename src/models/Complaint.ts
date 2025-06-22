@@ -7,6 +7,7 @@ export interface IResponse {
   attachments?: string[];
   createdAt: Date;
   updatedAt: Date;
+  closedAt?: Date;
 }
 
 export interface IComplaint {
@@ -56,6 +57,10 @@ const ResponseSchema = new mongoose.Schema<IResponse>({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  closedAt: {
+    type: Date,
+    default: null
   }
 });
 
