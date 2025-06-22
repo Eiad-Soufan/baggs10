@@ -313,6 +313,9 @@ export const updateTransfer = async (
 			return;
 		}
 
+		// Store the previous worker ID before updating
+		const previousWorkerId = transfer.workerId;
+
 		// if status is being changed create notification for the user
 		if (req.body.status && req.body.status !== transfer.status) {
 			const notification = new Notification({
@@ -340,9 +343,27 @@ export const updateTransfer = async (
 			.populate("userId", "name email")
 			.populate("workerId", "name email")
 			.populate("complaintId");
-		if (transfer?.status === "completed") {
+		
+		// If there was a previous worker and it's different from the new worker, make the previous worker available
+		if (previousWorkerId && req.body.workerId && previousWorkerId.toString() !== req.body.workerId.toString()) {
+			console.log('Updating previous worker status:', {
+				previousWorkerId: previousWorkerId.toString(),
+				newWorkerId: req.body.workerId.toString()
+			});
 			await Worker.findByIdAndUpdate(
-				transfer.workerId,
+				previousWorkerId,
+				{
+					isAvailable: true,
+					status: "Available",
+				},
+				{ new: true }
+			);
+			console.log('Previous worker status updated to Available');
+		}
+		
+		if (transfer?.status === "completed" && transfer?.workerId) {
+			await Worker.findByIdAndUpdate(
+				transfer.workerId._id,
 				{
 					$inc: { completedJobs: 1 },
 					isAvailable: true,
@@ -352,9 +373,9 @@ export const updateTransfer = async (
 				{ new: true }
 			);
 		}
-    if (transfer?.workerId && transfer.status === "in_progress") {
+		if ((transfer?.workerId && transfer.status === "in_progress")) {
 			await Worker.findByIdAndUpdate(
-				transfer.workerId,
+				transfer?.workerId._id,
 				{
 					isAvailable: false,
 					status: "Assigned",
@@ -365,6 +386,39 @@ export const updateTransfer = async (
 		if (!transfer) {
 			errorResponse(res, STATUS_CODES.NOT_FOUND, "Transfer not found");
 			return;
+		}
+		if (req.body.status === "cancelled" && transfer?.workerId) {
+			await Worker.findByIdAndUpdate(
+				transfer.workerId._id,
+				{
+					isAvailable: true,
+					status: "Available",
+				},
+				{ new: true }
+			);
+		}
+		if (req.body.status === "onTheWay" && transfer?.workerId) {
+			await Worker.findByIdAndUpdate(
+				transfer.workerId._id,
+				{
+					isAvailable: false,
+					status: "OnTheWay",
+				},
+				{ new: true }
+			);
+		}
+		
+		if (req.body.workerId) {
+			console.log('Assigning new worker:', req.body.workerId.toString());
+			await Worker.findByIdAndUpdate(
+				req.body.workerId,
+				{
+					isAvailable: false,
+					status: "Assigned",
+				},
+				{ new: true }
+			);
+			console.log('New worker status updated to Assigned');
 		}
 
 		successResponse(
