@@ -90,8 +90,8 @@ export const getTransfers = async (
 		const total = await Transfer.countDocuments(query);
 
 		const transfers = await Transfer.find(query)
-			.populate("userId", "name email")
-			.populate("workerId", "name email isAvailable status phoneNumber")
+			.populate("userId", "name email phone")
+			.populate("workerId", "name email isAvailable status phone")
 			.populate("complaintId")
 			.sort({ [sortBy]: order === "desc" ? -1 : 1 })
 			.skip(startIndex)
@@ -127,7 +127,7 @@ export const getMyTransfers = async (
 ): Promise<void> => {
 	try {
 		const transfers = await Transfer.find({ userId: req.user!._id })
-			.populate("workerId", "name email")
+			.populate("workerId", "name email phone")
 			//INFO check letter for serviceId population
 			.populate("complaintId", "_id title status")
 			.sort("-createdAt");
@@ -155,8 +155,8 @@ export const getTransfer = async (
 ): Promise<void> => {
 	try {
 		const transfer = await Transfer.findById(req.params.id)
-			.populate("userId", "name email")
-			.populate("workerId", "name email")
+			.populate("userId", "name email phone")
+			.populate("workerId", "name email phone")
 			.populate("complaintId");
 
 		if (!transfer) {
