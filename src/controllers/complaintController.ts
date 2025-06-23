@@ -338,6 +338,21 @@ export const createComplaint = async (
 			});
 		}
 
+		const notification = new Notification({
+			userId: complaint.userId._id,
+			message: `Your complaint with title: ${complaint.title} created successfully. Our customer support team will review it shortly.`,
+			createdBy: req.user!._id,
+			title: `${complaint.title} Complaint Created Successfully`,
+			type: "warning",
+			targetUsers: [complaint.userId._id],
+			isGlobal: false,
+			expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
+			updatedAt: new Date(),
+			sendNow: true,
+			redirectTo: `/customer-support/${complaint._id}`,
+		});
+		await notification.save();
+
 		successResponse(
 			res,
 			STATUS_CODES.CREATED,
@@ -433,6 +448,26 @@ export const addResponse = async (
 
 		await complaint.save();
 
+		const notification = new Notification({
+			userId: complaint.userId._id,
+			message: `Your complaint with title ${
+				complaint.title
+			} has a new message from ${
+				req.user?.role === "admin" ? "Customer support team" : req.user!.name
+			}.`,
+			createdBy: req.user!._id,
+			title: `Unread Messages in : '${complaint.title}' complaint`,
+			type: "warning",
+			targetUsers: [complaint.userId._id],
+			isGlobal: false,
+			expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
+			updatedAt: new Date(),
+			sendNow: true,
+			redirectTo: `/customer-support/${complaint._id}`,
+		});
+
+		await notification.save();
+
 		// Fetch the updated complaint with populated fields
 		const updatedComplaint = await Complaint.findById(req.params.id)
 			.populate("userId", "name email role")
@@ -478,8 +513,25 @@ export const updateComplaint = async (
 			return;
 		}
 
+		if (
+			(req.body.status === ComplaintStatus.CLOSED ||
+				req.body.status === ComplaintStatus.RESOLVED) &&
+			req.user!.role !== "admin"
+		) {
+			errorResponse(
+				res,
+				STATUS_CODES.FORBIDDEN,
+				"Only admin can close or resolve complaints"
+			);
+			return;
+		}
+
 		// If status is being changed to closed, add closedAt and closedByAdminId
-		if (req.body.status === ComplaintStatus.CLOSED || req.body.status === ComplaintStatus.RESOLVED) {
+		if (
+			(req.body.status === ComplaintStatus.CLOSED ||
+				req.body.status === ComplaintStatus.RESOLVED) &&
+			req.user!.role === "admin"
+		) {
 			req.body.closedAt = new Date();
 			req.body.closedByAdminId = req.user!._id;
 		}
@@ -795,7 +847,7 @@ export const getComplaintsStats = async (
 				totalComplaints,
 				openComplaints,
 				solvedComplaints,
-        todaysOpenComplaints
+				todaysOpenComplaints,
 			},
 		});
 	} catch (err) {
