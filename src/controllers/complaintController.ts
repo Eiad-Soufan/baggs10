@@ -438,13 +438,6 @@ export const addResponse = async (
 		) {
 			complaint.status = ComplaintStatus.IN_PROGRESS;
 		}
-		// If it's a customer response, update the status to 'pending'
-		else if (
-			req.user!.role === "customer" &&
-			complaint.status === ComplaintStatus.IN_PROGRESS
-		) {
-			complaint.status = ComplaintStatus.PENDING;
-		}
 
 		await complaint.save();
 
