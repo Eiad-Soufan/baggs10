@@ -21,7 +21,7 @@ export interface IUser {
 	transferAveragePerMonth?: number; 
 	// Customer specific fields
 	address?: string;
-	informationPreference: ("email" | "sms" | "call")[];
+	informationPreference: ("email" | "sms" | "call" | "whatsapp")[];
 	createdAt: Date;
 	updatedAt: Date;
 	pushNotification?: boolean;
@@ -120,7 +120,7 @@ const UserSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
 		},
 		informationPreference: {
 			type: [String],
-			enum: ["email", "sms", "call"],
+			enum: ["email", "sms", "call", "whatsapp"],
 			default: ["email"],
 			required: true,
 		},
