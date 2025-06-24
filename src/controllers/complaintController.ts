@@ -137,6 +137,11 @@ export const getComplaints = async (
 		// Build query
 		const query: Record<string, any> = {};
 
+		// Search in title (case-insensitive)
+		if (search) {
+			query.title = { $regex: search, $options: 'i' };
+		}
+
 		// Status filter
 		if (status) {
 			query.status = status;
@@ -170,14 +175,6 @@ export const getComplaints = async (
 			};
 		}
 
-		// Search in title and description
-		if (search) {
-			query.$or = [
-				{ title: { $regex: search, $options: "i" } },
-				{ description: { $regex: search, $options: "i" } },
-			];
-		}
-
 		// Pagination
 		const pageNum = parseInt(page, 10);
 		const limitNum = parseInt(limit, 10);
@@ -185,20 +182,21 @@ export const getComplaints = async (
 		const total = await Complaint.countDocuments(query);
 
 		const complaints = await Complaint.find(query)
-			.populate("userId", "name email phone")
-			.populate("assignedToId", "name email")
-			.populate("relatedWorkerId", "name email")
-			.populate("transferId")
-			.populate("closedByAdminId", "name email")
-			.populate("responses.responderId", "name email")
-			.sort({ [sortBy]: order === "desc" ? -1 : 1 })
+			.select('title status priority category createdAt userId assignedToId relatedWorkerId transferId')
+			.populate('userId', 'name email phone')
+			.populate('assignedToId', 'name email')
+			.populate('relatedWorkerId', 'name email')
+			.populate('transferId')
+			.populate('closedByAdminId', 'name email')
+			.populate('responses.responderId', 'name email')
+			.sort({ [sortBy]: order === 'desc' ? -1 : 1 })
 			.skip(startIndex)
 			.limit(limitNum);
 
 		successResponse(
 			res,
 			STATUS_CODES.OK,
-			"Complaints retrieved successfully",
+			'Complaints retrieved successfully',
 			complaints,
 			{
 				pagination: {
