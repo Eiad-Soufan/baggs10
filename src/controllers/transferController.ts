@@ -196,6 +196,7 @@ export const getTransfers = async (
         onTheWayAt: 1,
         acceptedAt: 1,
         inTransitAt: 1,
+		newContact: 1,
         "user.name": 1,
         "user.email": 1,
         "user.phone": 1,
