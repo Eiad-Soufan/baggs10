@@ -7,6 +7,9 @@ export interface IAd extends Document {
   createdByAdminId: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
+  startAt?: Date;
+  title: string;
+  status?: 'active' | 'deactive';
 }
 
 const AdSchema = new Schema<IAd>(
@@ -27,6 +30,20 @@ const AdSchema = new Schema<IAd>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'Admin ID is required'],
+    },
+    startAt: {
+      type: Date,
+      default: Date.now,
+    },
+    title: {
+      type: String,
+      trim: true,
+      required: [true, 'Title is required'],
+    },
+    status: {
+      type: String,
+      enum: ['active', 'deactive'],
+      default: 'active',
     },
   },
   {

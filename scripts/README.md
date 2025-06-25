@@ -16,7 +16,7 @@ node scripts/createAdmin.js
 node scripts/createAdmin.js "Admin Name" "admin@yourdomain.com" "+1234567890" "YourSecurePassword" "ADMIN001"
 ```
 
-## Parameters (in order)
+## Parameters (in transfer)
 
 1. name
 2. email

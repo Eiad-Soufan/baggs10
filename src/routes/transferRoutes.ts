@@ -67,7 +67,7 @@ router.use(protect);
  *         - userId
  *         - items
  *         - totalAmount
- *         - scheduledDate
+ *         - deliveryDate
  *         - from
  *         - to
  *         - pickUpDate
@@ -103,7 +103,7 @@ router.use(protect);
  *           enum: [pending, paid, failed, refunded]
  *           default: pending
  *           description: Payment status of the transfer
- *         scheduledDate:
+ *         deliveryDate:
  *           type: string
  *           format: date-time
  *           description: Scheduled date for the transfer
@@ -160,7 +160,7 @@ router.use(protect);
  *         name: status
  *         schema:
  *           type: string
- *           enum: [pending, in_progress, completed, cancelled]
+ *           enum: [pending, in_progress, in_transit, onTheWay, completed, cancelled]
  *       - in: query
  *         name: paymentStatus
  *         schema:
@@ -326,7 +326,7 @@ router.get("/:id", getTransfer);
  *             required:
  *               - items
  *               - totalAmount
- *               - scheduledDate
+ *               - deliveryDate
  *               - from
  *               - to
  *               - pickUpDate
@@ -355,7 +355,7 @@ router.get("/:id", getTransfer);
  *                       type: boolean
  *               totalAmount:
  *                 type: number
- *               scheduledDate:
+ *               deliveryDate:
  *                 type: string
  *                 format: date-time
  *               from:
@@ -433,9 +433,9 @@ router.post(
 			.withMessage("Total amount must be a number")
 			.isFloat({ min: 0 })
 			.withMessage("Total amount cannot be negative"),
-		body("scheduledDate")
+		body("deliveryDate")
 			.isISO8601()
-			.withMessage("Scheduled date must be a valid date"),
+			.withMessage("Delivery date must be a valid date"),
 		body("from")
 			.notEmpty()
 			.withMessage("From location is required")
@@ -462,6 +462,11 @@ router.post(
 			.withMessage("Pick up time is required")
 			.isString()
 			.withMessage("Pick up time must be a string"),
+		body("deliveryTime")
+			.notEmpty()
+			.withMessage("Delivery time is required")
+			.isString()
+			.withMessage("Delivery time must be a string"),
 		body("workerId").optional().isMongoId().withMessage("Invalid worker ID"),
 		body("complaintId")
 			.optional()
@@ -475,7 +480,7 @@ router.post(
  * @swagger
  * /api/v1/transfers/{id}:
  *   put:
- *     summary: Update transfer (Admin only)
+ *     summary: Update transfer 
  *     tags: [Transfers]
  *     security:
  *       - bearerAuth: []
@@ -494,7 +499,7 @@ router.post(
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [pending, in_progress, completed, cancelled]
+ *                 enum: [pending, in_progress, in_transit, onTheWay, completed, cancelled]
  *               paymentStatus:
  *                 type: string
  *                 enum: [pending, paid, failed, refunded]
@@ -567,11 +572,10 @@ router.post(
  */
 router.put(
 	"/:id",
-	authorize("admin"),
 	[
 		body("status")
 			.optional()
-			.isIn(["pending", "in_progress", "completed", "cancelled"])
+			.isIn(["pending", "in_progress", "in_transit" ,"onTheWay", "completed", "cancelled"])
 			.withMessage("Invalid status"),
 		body("paymentStatus")
 			.optional()

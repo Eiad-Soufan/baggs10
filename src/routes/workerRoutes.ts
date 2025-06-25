@@ -202,6 +202,7 @@ router.post(
     body('role')
       .isIn(['worker', 'manager' , 'supervisor'])
       .withMessage('Role must be either worker, manager or supervisor'),
+    
   ],
   createWorker
 );
@@ -296,6 +297,10 @@ router.put(
       .optional()
       .isString()
       .withMessage('Image must be a string'),
+    body('status')
+      .optional()
+      .isIn(['Available', 'Assigned' , 'OnTheWay' , 'OnLeave'])
+      .withMessage('Role must be either Available, Assigned, OnTheWay or OnLeave'),
     body('role')
       .optional()
       .isIn(['worker', 'manager' , 'supervisor'])

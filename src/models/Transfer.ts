@@ -1,155 +1,227 @@
-import mongoose, { Types } from 'mongoose';
+import mongoose, { Types } from "mongoose";
 
 export interface ITransferItem {
-  name: string;
-  weight: number;
-  images: string[];
-  isBreakable: boolean;
+	name: string;
+	weight: number;
+	images: string[];
+	isBreakable: boolean;
+}
+
+export interface ITransferNewContact {
+	name: string;
+	phone: string;
+	email: string;
+	informationPreference: ("email" | "sms" | "call" | "whatsapp")[];
 }
 
 export interface ITransferRating {
-  rating: number;
-  comment?: string;
-  createdAt: Date;
+	rating: number;
+	comment?: string;
+	createdAt: Date;
 }
 
 export interface ITransfer {
-  userId: Types.ObjectId;
-  workerId?: Types.ObjectId;
-  complaintId?: Types.ObjectId;
-  items: ITransferItem[];
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  totalAmount: number;
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  scheduledDate: Date;
-  from: string;
-  to: string;
-  flightGate?: string;
-  flightNumber?: string;
-  pickUpDate: Date;
-  pickUpTime: string;
-  completedAt?: Date;
-  cancelledAt?: Date;
-  rating?: ITransferRating;
-  createdAt: Date;
-  updatedAt: Date;
+	userId: Types.ObjectId;
+	workerId?: Types.ObjectId;
+	complaintId?: Types.ObjectId;
+	items: ITransferItem[];
+	status:
+		| "pending"
+		| "in_progress"
+		| "in_transit"
+		| "onTheWay"
+		| "completed"
+		| "cancelled";
+	totalAmount: number;
+	paymentStatus: "pending" | "paid" | "failed" | "refunded";
+	deliveryDate: Date;
+	from: string;
+	to: string;
+	flightGate?: string;
+	flightNumber?: string;
+	pickUpDate: Date;
+	pickUpTime: string;
+	deliveryTime: string;
+	completedAt?: Date;
+	cancelledAt?: Date;
+	rating?: ITransferRating;
+	createdAt: Date;
+	updatedAt: Date;
+	assigneedAt?: Date;
+	onTheWayAt?: Date;
+	acceptedAt?: Date;
+	inTransitAt?: Date;
+	newContact?: ITransferNewContact;
 }
 
 const TransferItemSchema = new mongoose.Schema<ITransferItem>({
-  name: {
-    type: String,
-    required: [true, 'Item name is required'],
-    trim: true,
-    maxlength: [100, 'Item name cannot be more than 100 characters']
-  },
-  weight: {
-    type: Number,
-    required: [true, 'Item weight is required'],
-    min: [0, 'Weight cannot be negative']
-  },
-  images: [{
-    type: String,
-    required: [true, '3 image is required'],
-    min: [3, '3 images are required'],
-    trim: true
-  }],
-  isBreakable: {
-    type: Boolean,
-    default: false
-  }
+	name: {
+		type: String,
+		required: [true, "Item name is required"],
+		trim: true,
+		maxlength: [100, "Item name cannot be more than 100 characters"],
+	},
+	weight: {
+		type: Number,
+		required: [true, "Item weight is required"],
+		min: [0, "Weight cannot be negative"],
+	},
+	images: [
+		{
+			type: String,
+			required: [true, "3 image is required"],
+			min: [3, "3 images are required"],
+			trim: true,
+		},
+	],
+	isBreakable: {
+		type: Boolean,
+		default: false,
+	},
 });
 
 const TransferRatingSchema = new mongoose.Schema<ITransferRating>({
-  rating: {
-    type: Number,
-    required: [true, 'Rating is required'],
-    min: 1,
-    max: 5
-  },
-  comment: {
-    type: String,
-    trim: true,
-    maxlength: [500, 'Comment cannot be more than 500 characters']
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+	rating: {
+		type: Number,
+		required: [true, "Rating is required"],
+		min: 1,
+		max: 5,
+	},
+	comment: {
+		type: String,
+		trim: true,
+		maxlength: [500, "Comment cannot be more than 500 characters"],
+	},
+	createdAt: {
+		type: Date,
+		default: Date.now,
+	},
+});
+
+const TransferNewContactSchema = new mongoose.Schema<ITransferNewContact>({
+	name: {
+		type: String,
+		required: [true, "Name is required"],
+		trim: true,
+	},
+	email: {
+		type: String,
+		required: [true, "Email is required"],
+		trim: true,
+		match: [/.+\@.+\..+/, "Please enter a valid email address"],
+	},
+	phone: {
+		type: String,
+		required: [true, "Phone is required"],
+		trim: true,
+		match: [/^\d{10,15}$/, "Phone number must be between 10 to 15 digits"],
+	},
+	informationPreference: {
+		type: [String],
+		enum: ["email", "sms", "call", "whatsapp"],
+		default: ["email"],
+		required: true,
+	},
 });
 
 const TransferSchema = new mongoose.Schema<ITransfer>(
-  {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: [true, 'User ID is required'],
-      ref: 'User'
-    },
-    workerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Worker'
-    },
-    complaintId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Complaint'
-    },
-    items: [TransferItemSchema],
-    status: {
-      type: String,
-      enum: ['pending', 'in_progress', 'completed', 'cancelled'],
-      default: 'pending'
-    },
-    totalAmount: {
-      type: Number,
-      required: [true, 'Total amount is required'],
-      min: [0, 'Total amount cannot be negative']
-    },
-    paymentStatus: {
-      type: String,
-      enum: ['pending', 'paid', 'failed', 'refunded'],
-      default: 'pending'
-    },
-    scheduledDate: {
-      type: Date,
-      required: [true, 'Scheduled date is required']
-    },
-    from: {
-      type: String,
-      required: [true, 'From location is required'],
-      trim: true
-    },
-    to: {
-      type: String,
-      required: [true, 'To location is required'],
-      trim: true
-    },
-    flightGate: {
-      type: String,
-      trim: true
-    },
-    flightNumber: {
-      type: String,
-      trim: true
-    },
-    pickUpDate: {
-      type: Date,
-      required: [true, 'Pick up date is required']
-    },
-    pickUpTime: {
-      type: String,
-      required: [true, 'Pick up time is required'],
-      trim: true
-    },
-    completedAt: {
-      type: Date
-    },
-    cancelledAt: {
-      type: Date
-    },
-    rating: TransferRatingSchema
-  },
-  {
-    timestamps: true
-  }
+	{
+		userId: {
+			type: mongoose.Schema.Types.ObjectId,
+			required: [true, "User ID is required"],
+			ref: "User",
+		},
+		workerId: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Worker",
+		},
+		complaintId: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Complaint",
+		},
+		items: [TransferItemSchema],
+		status: {
+			type: String,
+			enum: [
+				"pending",
+				"in_progress",
+				"in_transit",
+				"onTheWay",
+				"completed",
+				"cancelled",
+			],
+			default: "pending",
+		},
+		totalAmount: {
+			type: Number,
+			required: [true, "Total amount is required"],
+			min: [0, "Total amount cannot be negative"],
+		},
+		paymentStatus: {
+			type: String,
+			enum: ["pending", "paid", "failed", "refunded"],
+			default: "pending",
+		},
+		deliveryDate: {
+			type: Date,
+			required: [true, "Scheduled date is required"],
+		},
+		from: {
+			type: String,
+			required: [true, "From location is required"],
+			trim: true,
+		},
+		to: {
+			type: String,
+			required: [true, "To location is required"],
+			trim: true,
+		},
+		flightGate: {
+			type: String,
+			trim: true,
+		},
+		flightNumber: {
+			type: String,
+			trim: true,
+		},
+		pickUpDate: {
+			type: Date,
+			required: [true, "Pick up date is required"],
+		},
+		pickUpTime: {
+			type: String,
+			required: [true, "Pick up time is required"],
+			trim: true,
+		},
+		deliveryTime: {
+			type: String,
+			required: [true, "Scheduled time is required"],
+			trim: true,
+		},
+		completedAt: {
+			type: Date,
+		},
+		cancelledAt: {
+			type: Date,
+		},
+		assigneedAt: {
+			type: Date,
+		},
+		onTheWayAt: {
+			type: Date,
+		},
+		acceptedAt: {
+			type: Date,
+		},
+		inTransitAt: {
+			type: Date,
+		},
+		rating: TransferRatingSchema,
+    newContact: TransferNewContactSchema,
+	},
+	{
+		timestamps: true,
+	}
 );
 
 // Add indexes for better query performance
@@ -158,8 +230,8 @@ TransferSchema.index({ workerId: 1 });
 TransferSchema.index({ complaintId: 1 });
 TransferSchema.index({ status: 1 });
 TransferSchema.index({ paymentStatus: 1 });
-TransferSchema.index({ scheduledDate: 1 });
+TransferSchema.index({ deliveryDate: 1 });
 TransferSchema.index({ createdAt: -1 });
 
-const Transfer = mongoose.model<ITransfer>('Transfer', TransferSchema);
-export default Transfer; 
+const Transfer = mongoose.model<ITransfer>("Transfer", TransferSchema);
+export default Transfer;

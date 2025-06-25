@@ -10,6 +10,7 @@ interface WorkerFilters {
   identityNumber?: string;
   phone?: { $regex: string; $options: string };
   isAvailable?: boolean;
+  status?: string;
   role?: string;
 }
 
@@ -21,6 +22,7 @@ interface IWorker {
   identityNumber?: string;
   isAvailable: boolean;
   role: 'worker' | 'admin';
+  status?: 'Available' | 'Assigned' | 'OnTheWay' | 'OnLeave';
 }
 
 interface WorkerDocument extends Document, IWorker {}
@@ -62,6 +64,7 @@ export const getWorkers = async (
       phone,
       isAvailable,
       role,
+      status,
       sortBy = 'createdAt',
       order = 'desc',
       page = 1,
@@ -83,6 +86,9 @@ export const getWorkers = async (
     }
     if (isAvailable !== undefined) {
       query.isAvailable = (isAvailable as string) === 'true';
+    }
+    if (status) {
+      query.status = status as string;
     }
     if (role) {
       query.role = role as string;
@@ -297,7 +303,7 @@ export const getWorkersStats = async (
       workerId: { $exists: true, $ne: null }
     })
     // Workers with status available (assuming isAvailable is true)
-    const availableWorkers = await Workers.countDocuments({ role: 'worker', isAvailable: true })
+    const availableWorkers = await Workers.countDocuments({ role: 'worker', status: 'Available' })
     res.status(200).json({
       success: true,
       data: {

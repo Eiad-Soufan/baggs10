@@ -3,6 +3,7 @@ import { validationResult } from 'express-validator';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import User, { IUser } from '../models/User';
 import ErrorResponse from '../utils/errorResponse';
+import Transfer from '../models/Transfer';
 
 interface RegisterRequestBody {
   name: string;
@@ -13,6 +14,8 @@ interface RegisterRequestBody {
   role?: 'admin' | 'customer' | 'worker';
   specialization?: string;
   address?: string;
+  region?: string;
+  confirmPrivacy?: boolean;
 }
 
 interface LoginRequestBody {
@@ -44,8 +47,12 @@ export const register = async (
       return;
     }
 
-    const { name, email, phone, password, identityNumber, role, specialization, address } = req.body;
+    const { name, email, phone, password, identityNumber, role, specialization, address, region, confirmPrivacy } = req.body;
 
+    if (!confirmPrivacy) {
+      next(new ErrorResponse('You must confirm privacy policy', 400));
+      return;
+    }
     // Prevent worker registration through this endpoint
     if (role === 'worker') {
       next(new ErrorResponse('Worker accounts can only be created by administrators', 403));
@@ -68,7 +75,9 @@ export const register = async (
       identityNumber,
       role: role === 'admin' ? 'admin' : 'customer', // Allow admin role if specified, otherwise default to customer
       specialization,
-      address
+      address,
+      region: region ?? 'Unknown', // Default region if not provided
+      confirmPrivacy,
     });
 
     sendTokenResponse(user, 201, res);
@@ -124,27 +133,57 @@ export const login = async (
  * @access  Private
  */
 export const getMe = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+	req: Request,
+	res: Response,
+	next: NextFunction
 ): Promise<void> => {
-  try {
-    const user = await User.findById(req.user?._id);
-    if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
-    }
-    // Ensure informationPreference is present
-    res.status(200).json({
-      success: true,
-      data: {
-        ...user.toObject(),
-        informationPreference: user.informationPreference || ['email']
-      }
-    });
-  } catch (err) {
-    next(err);
-  }
+	try {
+		const user = await User.findById(req.user?._id);
+		if (!user) {
+			res.status(404).json({ success: false, message: "User not found" });
+			return;
+		}
+
+		const monthlyTransfers = await Transfer.aggregate([
+			{
+				$match: {
+					userId: req.user?._id,
+				},
+			},
+			{
+				$group: {
+					_id: {
+						year: { $year: "$createdAt" },
+						month: { $month: "$createdAt" },
+					},
+					totalAmount: { $sum: "$amount" },
+				},
+			},
+		]);
+
+		const numberOfMonths = monthlyTransfers.length;
+		const totalAmount = monthlyTransfers.reduce(
+      (sum: number, month: { totalAmount: number }) => sum + month.totalAmount,
+			0
+		);
+		const averagePerMonth =
+			numberOfMonths > 0 ? totalAmount / numberOfMonths : 0;
+		const totalTransfers = await Transfer.countDocuments({
+			userId: req.user?._id,
+		});
+		res.status(200).json({
+			success: true,
+			data: {
+				...user.toObject(),
+				transferAveragePerMonth: averagePerMonth,
+        totalTransfers : totalTransfers ?? 0,
+				region: user.region ?? "Unknown",
+				informationPreference: user.informationPreference || ["email"],
+			},
+		});
+	} catch (err) {
+		next(err);
+	}
 };
 
 /**

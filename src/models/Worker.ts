@@ -17,6 +17,7 @@ export interface IWorker {
   identityNumber?: string;
   isAvailable: boolean;
   role: 'worker' | 'manager' | 'supervisor';
+  status?: 'Available' | 'Assigned' | 'OnTheWay' | 'OnLeave';
   specialization: string;
   rating: number;
   completedJobs: number;
@@ -103,6 +104,11 @@ const WorkerSchema = new mongoose.Schema<IWorker, WorkerModel, IWorkerMethods>(
       type: String,
       enum: ['worker', 'manager', 'supervisor'],
       default: 'worker',
+    },
+    status: {
+      type: String,
+      enum: ['Available', 'Assigned', 'On The Way'],
+      default: 'Available',
     },
     specialization: {
       type: String,
