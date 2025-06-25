@@ -7,7 +7,7 @@ import {
 	STATUS_CODES,
 } from "../utils/responseHandler";
 import { Types } from "mongoose";
-import { IUser } from "../models/User";
+import User, { IUser } from "../models/User";
 import ErrorResponse from "../utils/errorResponse";
 import Transfer from "../models/Transfer";
 import Notification from "../models/Notification";
@@ -439,6 +439,12 @@ export const addResponse = async (
 
 		await complaint.save();
 
+		let confirmerId = req.user!._id;
+		if (req.user?.role === "customer") {
+			const admin = await User.findOne({ role: "admin" });
+			confirmerId = admin?._id ?? req.user!._id; // Fallback to user if no admin found
+		}
+
 		const notification = new Notification({
 			userId: complaint.userId._id,
 			message: `Your complaint with title ${
@@ -449,7 +455,7 @@ export const addResponse = async (
 			createdBy: req.user!._id,
 			title: `Unread Messages in : '${complaint.title}' complaint`,
 			type: "warning",
-			targetUsers: [complaint.userId._id],
+			targetUsers: [confirmerId],
 			isGlobal: false,
 			expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expires in 7 days
 			updatedAt: new Date(),
