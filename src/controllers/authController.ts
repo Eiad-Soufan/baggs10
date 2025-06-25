@@ -15,6 +15,7 @@ interface RegisterRequestBody {
   specialization?: string;
   address?: string;
   region?: string;
+  confirmPrivacy?: boolean;
 }
 
 interface LoginRequestBody {
@@ -46,8 +47,12 @@ export const register = async (
       return;
     }
 
-    const { name, email, phone, password, identityNumber, role, specialization, address, region } = req.body;
+    const { name, email, phone, password, identityNumber, role, specialization, address, region, confirmPrivacy } = req.body;
 
+    if (!confirmPrivacy) {
+      next(new ErrorResponse('You must confirm privacy policy', 400));
+      return;
+    }
     // Prevent worker registration through this endpoint
     if (role === 'worker') {
       next(new ErrorResponse('Worker accounts can only be created by administrators', 403));
@@ -71,7 +76,8 @@ export const register = async (
       role: role === 'admin' ? 'admin' : 'customer', // Allow admin role if specified, otherwise default to customer
       specialization,
       address,
-      region: region || 'Unknown', // Default region if not provided
+      region: region ?? 'Unknown', // Default region if not provided
+      confirmPrivacy,
     });
 
     sendTokenResponse(user, 201, res);

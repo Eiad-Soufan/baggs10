@@ -27,6 +27,7 @@ export interface IUser {
 	pushNotification?: boolean;
 	emailAllowance?: boolean;
 	automaticLanguageDetection?: boolean;
+	confirmPrivacy: boolean;
 }
 
 export interface IUserMethods {
@@ -140,6 +141,10 @@ const UserSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
 			type: Number,
 			default: 0,
 		},
+		confirmPrivacy: {
+			type: Boolean,
+			default: false,
+		}
 	},
 	{
 		timestamps: true,

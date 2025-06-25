@@ -77,6 +77,7 @@ interface RefreshTokenRequestBody {
  *               - email
  *               - phone
  *               - password
+ *               - confirmPrivacy   
  *             properties:
  *               name:
  *                 type: string
@@ -100,6 +101,8 @@ interface RefreshTokenRequestBody {
  *                 default: 24
  *               image:
  *                 type: string
+ *               confirmPrivacy:
+ *                 type: boolean
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -119,6 +122,7 @@ router.post(
   '/register',
   [
     body('name').not().isEmpty().withMessage('Name is required'),
+    body('confirmPrivacy').isBoolean().not().isEmpty().withMessage('confirmPrivacy is required'),
     body('email').isEmail().withMessage('Please include a valid email'),
     body('phone').not().isEmpty().withMessage('Phone number is required'),
     body('password')
