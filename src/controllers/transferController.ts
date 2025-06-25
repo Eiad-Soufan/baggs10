@@ -874,7 +874,6 @@ export const getTransfersStats = async (
 		// Cancelled transfers today
 		const cancelledTransfers = await Transfer.countDocuments({
 			status: "cancelled",
-			createdAt: { $gte: today, $lt: tomorrow },
 		});
 		// Cancelled transfers yesterday
 		const cancelledTransfersYesterday = await Transfer.countDocuments({
