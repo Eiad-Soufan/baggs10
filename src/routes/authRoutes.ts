@@ -8,7 +8,19 @@ import { authLimiter } from '../middleware/rateLimiter';
 const router = express.Router();
 
 // Apply rate limiter to all auth routes
-router.use(authLimiter);
+//router.use(authLimiter);
+
+router.options('*', cors()); // أضف هذا السطر
+
+// تطبيق rate limiter على جميع الطلبات ما عدا OPTIONS
+router.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    next();
+  } else {
+    authLimiter(req, res, next);
+  }
+});
+
 
 // Define request body types
 interface RegisterRequestBody {
