@@ -14,9 +14,17 @@ import { protect, authorize } from '../middleware/auth';
 const router: Router = express.Router();
 
 // Apply protection to all routes
-router.use(protect);
-// Remove global admin authorization for all routes
-// router.use(authorize('admin'));
+//router.use(protect);
+router.options('*', cors()); // أضف هذا السطر
+
+// تطبيق rate limiter على جميع الطلبات ما عدا OPTIONS
+router.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    next();
+  } else {
+    protect(req, res, next);
+  }
+});
 
 /**
  * @swagger
