@@ -39,13 +39,15 @@ const io = initializeSocket(httpServer);
 app.use(express.json());
 
 // Enable CORS
+// Enable CORS
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
-    : '*',
-  credentials: true
+    ? ['https://www.yallahbaggage.com', 'https://yallahbaggage.com'] // Array of allowed production URLs
+    : '*', // Allow all in development
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Explicit methods
+  allowedHeaders: ['Content-Type', 'Authorization'] // Explicit headers
 }));
-
 // Set security headers with Swagger UI compatibility
 app.use(
   helmet({
