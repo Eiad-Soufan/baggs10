@@ -17,7 +17,18 @@ import { protect, authorize } from '../middleware/auth';
 const router: Router = express.Router();
 
 // Apply protect middleware to all routes
-router.use(protect);
+//router.use(protect);
+router.options('*', cors()); // أضف هذا السطر
+
+// تطبيق rate limiter على جميع الطلبات ما عدا OPTIONS
+router.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    next();
+  } else {
+    protect(req, res, next);
+  }
+});
+
 
 /**
  * @swagger
