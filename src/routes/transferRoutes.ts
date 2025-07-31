@@ -18,14 +18,7 @@ const router = express.Router();
 //router.use(protect);
 router.options('*', cors()); // أضف هذا السطر
 
-// تطبيق rate limiter على جميع الطلبات ما عدا OPTIONS
-router.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    next();
-  } else {
-    protect(req, res, next);
-  }
-});
+router.use(protect);
 
 
 /**
