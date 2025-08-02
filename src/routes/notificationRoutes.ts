@@ -10,12 +10,12 @@ import {
 	markAsRead,
   markAllAsRead,
 } from "../controllers/notificationController";
-
+import cors from 'cors';
 import { protect, authorize } from "../middleware/auth";
 import { mutuallyExclusiveSendOptions } from "../middleware/notification";
 
 const router: Router = express.Router();
-
+router.options('*', cors());
 // Apply protect middleware to all routes
 router.use(protect);
 
