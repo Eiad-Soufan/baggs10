@@ -16,7 +16,7 @@ const router: Router = express.Router();
 // السماح لطلبات OPTIONS لجميع مسارات الإعلانات
 router.options('*', cors());
 
-// بعد السماح بالـ CORS، فعّل الحماية
+
 router.use(protect);
 
 /**
