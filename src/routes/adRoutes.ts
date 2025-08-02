@@ -10,8 +10,10 @@ import {
 	getAllAds,
 } from "../controllers/adController";
 import { protect, authorize } from "../middleware/auth";
+import cors from 'cors';
 
 const router: Router = express.Router();
+router.options('*', cors());
 router.use(protect);
 
 /**
