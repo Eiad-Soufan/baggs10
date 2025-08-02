@@ -10,7 +10,7 @@ import {
 } from '../controllers/userController';
 
 import { protect, authorize } from '../middleware/auth';
-
+import cors from 'cors';
 const router = express.Router();
 
 // Apply protection to all routes
