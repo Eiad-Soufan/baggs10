@@ -9,10 +9,14 @@ import {
 } from '../controllers/adController';
 import { protect, authorize } from '../middleware/auth';
 
-const router: Router = express.Router();
-//router.use(protect);
-router.options('*', cors()); // أضف هذا السطر
+import cors from 'cors'; // تأكد أنها موجودة
 
+const router: Router = express.Router();
+
+// السماح لطلبات OPTIONS لجميع مسارات الإعلانات
+router.options('*', cors());
+
+// بعد السماح بالـ CORS، فعّل الحماية
 router.use(protect);
 
 /**
