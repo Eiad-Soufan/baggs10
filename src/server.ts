@@ -51,6 +51,7 @@ app.use(cors({
   exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar']
 }));
 
+app.options('*', cors()); // للسماح بالـ preflight
 
 // Set security headers with Swagger UI compatibility
 app.use(
