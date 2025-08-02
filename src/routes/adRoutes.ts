@@ -15,7 +15,7 @@ import cors from 'cors';
 const router: Router = express.Router();
 router.options('*', cors());
 router.use(protect);
-router.get('/getAllAds', getAllAds);
+
 
 /**
  * @swagger
