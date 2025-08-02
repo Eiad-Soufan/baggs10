@@ -46,6 +46,8 @@ app.use(cors({
   credentials: true
 }));
 
+app.options('*', cors());
+
 // Set security headers with Swagger UI compatibility
 app.use(
   helmet({
