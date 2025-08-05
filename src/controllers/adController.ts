@@ -37,6 +37,85 @@ export const getAds = async (req: Request, res: Response, next: NextFunction) =>
   });
 };
 
+
+export const getAllAds = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const {
+		page = "1",
+		limit = "10",
+		sortBy = "createdAt",
+		order = "desc",
+	} = req.query;
+
+	if (!req.user || req.user.role !== "admin") {
+		return next(new ErrorResponse("Not authorized to access this route", 401));
+	}
+
+	const pageNum = parseInt(page as string, 10);
+	const limitNum = parseInt(limit as string, 10);
+	const startIndex = (pageNum - 1) * limitNum;
+	const endIndex = pageNum * limitNum;
+	const total = await Ad.countDocuments({});
+
+	const pagination: PaginationResult = {
+		total,
+		page: pageNum,
+		limit: limitNum,
+		pageCount: Math.ceil(total / limitNum),
+	};
+
+	if (endIndex < total) {
+		pagination.next = {
+			page: pageNum + 1,
+			limit: limitNum,
+		};
+	}
+
+	if (startIndex > 0) {
+		pagination.prev = {
+			page: pageNum - 1,
+			limit: limitNum,
+		};
+	}
+
+	// Fetch ads
+	const ads = await Ad.find()
+		.populate({
+			path: "createdByAdminId",
+			select: "name email",
+		})
+		.sort({ [sortBy as string]: order === "desc" ? -1 : 1 })
+		.skip(startIndex)
+		.limit(limitNum);
+
+	// Update expired ads to deactive if needed
+	const now = new Date();
+	await Promise.all(
+		ads.map(async (ad: IAd) => {
+			if (
+				ad.expireDate &&
+				new Date(ad.expireDate) < now &&
+				ad?.status !== "deactive"
+			) {
+				ad.status = "deactive";
+				await ad.save();
+			}
+		})
+	);
+
+	res.status(200).json({
+		success: true,
+		count: ads.length,
+		pagination,
+		data: ads,
+	});
+};
+
+
+
 // @desc    Get single ad
 // @route   GET /api/v1/ads/:id
 // @access  Public
