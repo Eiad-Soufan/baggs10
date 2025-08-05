@@ -172,7 +172,6 @@ router.get("/", getAds);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/getAllAds", authorize("admin"), getAllAds);
-//router.get("/getAllAds", getAllAds);
 
 /**
  * @swagger
