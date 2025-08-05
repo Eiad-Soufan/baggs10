@@ -129,7 +129,7 @@ const checkAndCreateAdmin = async () => {
 };
 
 // Connect to database and start server only if not in serverless environment
-if (process.env.NODE_ENV !== 'production') {
+//if (process.env.NODE_ENV !== 'production') {
   const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
   
   connectDB().then(async () => {
@@ -143,6 +143,6 @@ if (process.env.NODE_ENV !== 'production') {
     console.error('Failed to connect to database:', error);
     process.exit(1);
   });
-}
+//}
 
 export default app; 
