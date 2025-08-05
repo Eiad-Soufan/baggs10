@@ -100,9 +100,9 @@ export const getAllAds = async (
 		order = "desc",
 	} = req.query;
 
-	if (!req.user || req.user.role !== "admin") {
-		return next(new ErrorResponse("Not authorized to access this route", 401));
-	}
+	// if (!req.user || req.user.role !== "admin") {
+	// 	return next(new ErrorResponse("Not authorized to access this route", 401));
+	// }
 
 	const pageNum = parseInt(page as string, 10);
 	const limitNum = parseInt(limit as string, 10);
