@@ -6,6 +6,7 @@ import {
   getAd,
   updateAd,
   deleteAd,
+  getAllAds,
 } from '../controllers/adController';
 import { protect, authorize } from '../middleware/auth';
 
@@ -95,23 +96,18 @@ router.use(protect);
  */
 
 router.post(
-  '/',
-  protect,
-  authorize('admin'),
-  [
-    body('url')
-      .optional()
-      .isURL()
-      .withMessage('Please provide a valid URL'),
-    body('image')
-      .optional()
-      .isString()
-      .withMessage('Image must be a string'),
-    body('expireDate')
-      .isISO8601()
-      .withMessage('Please provide a valid date in ISO format'),
-  ],
-  createAd
+	"/",
+	protect,
+	authorize("admin"),
+	[
+    body("title").exists().isString().withMessage("Title must be a string").isLength({ min: 5 }).withMessage("Title cannot be empty"),
+		body("url").optional().isURL().withMessage("Please provide a valid URL"),
+		body("image").optional().isString().withMessage("Image must be a string"),
+		body("expireDate")
+			.isISO8601()
+			.withMessage("Please provide a valid date in ISO format"),
+	],
+	createAd
 );
 
 /**
@@ -138,7 +134,95 @@ router.post(
  *                     $ref: '#/components/schemas/Ad'
  */
 
-router.get('/', getAds);
+router.get("/", getAds);
+
+/**
+ * @swagger
+ * /api/v1/ads/getAllAds:
+ *   get:
+ *     summary: Get all ads (admin only)
+ *     tags:
+ *       - Ads
+ *     description: Returns all ads, including those that are expired. Only accessible by admin users.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successful response with all ads
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Ad'
+ *       403:
+ *         description: Forbidden - Not authorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get("/getAllAds", authorize("admin"), getAllAds);
+
+/**
+ * @swagger
+ * /api/v1/ads/stats:
+ *   get:
+ *     tags:
+ *       - Ads
+ *     summary: Get advertisement statistics (admin only)
+ *     description: Returns the total number of ads, how many are active (not expired), and how many are deactive (expired). Only accessible by admin users.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successful response with ad statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalAds:
+ *                       type: integer
+ *                       example: 120
+ *                     activeAds:
+ *                       type: integer
+ *                       example: 95
+ *                     deactiveAds:
+ *                       type: integer
+ *                       example: 25
+ *       403:
+ *         description: Forbidden - Not authorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get("/stats", authorize("admin"), getAdsStats);
 
 /**
  * @swagger
@@ -168,7 +252,7 @@ router.get('/', getAds);
  *         description: Ad not found
  */
 
-router.get('/:id', getAd);
+router.get("/:id", getAd);
 
 /**
  * @swagger
@@ -221,24 +305,24 @@ router.get('/:id', getAd);
  */
 
 router.put(
-  '/:id',
-  protect,
-  authorize('admin'),
-  [
-    body('url')
-      .optional()
-      .isURL()
-      .withMessage('Please provide a valid URL'),
-    body('image')
-      .optional()
-      .isString()
-      .withMessage('Image must be a string'),
-    body('expireDate')
-      .optional()
-      .isISO8601()
-      .withMessage('Please provide a valid date in ISO format'),
-  ],
-  updateAd
+	"/:id",
+	protect,
+	authorize("admin"),
+	[
+		body("title")
+			.exists()
+			.isString()
+			.withMessage("Title must be a string")
+			.isLength({ min: 5 })
+			.withMessage("Title cannot be empty"),
+		body("url").optional().isURL().withMessage("Please provide a valid URL"),
+		body("image").optional().isString().withMessage("Image must be a string"),
+		body("expireDate")
+			.optional()
+			.isISO8601()
+			.withMessage("Please provide a valid date in ISO format"),
+	],
+	updateAd
 );
 
 /**
@@ -275,6 +359,6 @@ router.put(
  *         description: Ad not found
  */
 
-router.delete('/:id', protect, authorize('admin'), deleteAd);
+router.delete("/:id", protect, authorize("admin"), deleteAd);
 
-export default router; 
+export default router;
