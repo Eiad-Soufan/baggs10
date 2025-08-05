@@ -171,8 +171,8 @@ router.get("/", getAds);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get("/getAllAds", authorize("admin"), getAllAds);
-
+//router.get("/getAllAds", authorize("admin"), getAllAds);
+router.get('/getAllAds', getAllAds); 
 /**
  * @swagger
  * /api/v1/ads/stats:
