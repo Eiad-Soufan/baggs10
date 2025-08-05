@@ -48,7 +48,7 @@ app.use(express.json());
 
 
 app.use(cors({
-  origin: 'https://www.yallahbaggage.com/',
+  origin: 'https://www.yallahbaggage.com',
   credentials: true
 }));
 
