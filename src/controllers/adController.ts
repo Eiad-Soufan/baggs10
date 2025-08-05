@@ -138,18 +138,17 @@ export const getAllAds = async (
 			.limit(limitNum);
 
 		const now = new Date();
-		await Promise.all(
-			ads.map(async (ad: IAd) => {
-				if (
-					ad.expireDate &&
-					new Date(ad.expireDate) < now &&
-					ad?.status !== "deactive"
-				) {
-					ad.status = "deactive";
-					await ad.save();
-				}
-			})
-		);
+await Promise.all(
+  ads.map(async (ad: IAd) => {
+    if (
+      ad.expireDate &&
+      new Date(ad.expireDate) < now &&
+      ad?.status !== "deactive"
+    ) {
+      await Ad.updateOne({ _id: ad._id }, { status: "deactive" });
+    }
+  })
+);
 
 		res.status(200).json({
 			success: true,
