@@ -39,12 +39,19 @@ const io = initializeSocket(httpServer);
 app.use(express.json());
 
 // Enable CORS
+// app.use(cors({
+//   origin: process.env.NODE_ENV === 'production' 
+//     ? process.env.FRONTEND_URL 
+//     : '*',
+//   credentials: true
+// }));
+
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
-    : '*',
+  origin: process.env.FRONTEND_URL || '*',
   credentials: true
 }));
+
 
 app.options('*', cors());
 
