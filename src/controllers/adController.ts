@@ -48,41 +48,46 @@ export const getAds = async (
 	res: Response,
 	next: NextFunction
 ) => {
-	const ads = await Ad.find({
-		$and: [
-			{
-				$or: [
-					{ startAt: { $exists: false } },
-					{ startAt: { $lte: new Date() } },
-				],
-			},
-			{ expireDate: { $gt: new Date() } },
-		],
-	}).populate({
-		path: "createdByAdminId",
-		select: "name email",
-	});
+	try {
+		const ads = await Ad.find({
+			$and: [
+				{
+					$or: [
+						{ startAt: { $exists: false } },
+						{ startAt: { $lte: new Date() } },
+					],
+				},
+				{ expireDate: { $gt: new Date() } },
+			],
+		}).populate({
+			path: "createdByAdminId",
+			select: "name email",
+		});
 
-	// Update expired ads to deactive if needed
-	const now = new Date();
-	await Promise.all(
-		ads.map(async (ad: IAd) => {
-			if (
-				ad.expireDate &&
-				new Date(ad.expireDate) < now &&
-				ad?.status !== "deactive"
-			) {
-				ad.status = "deactive";
-				await ad.save();
-			}
-		})
-	);
+		// Update expired ads to deactive if needed
+		const now = new Date();
+		await Promise.all(
+			ads.map(async (ad: IAd) => {
+				if (
+					ad.expireDate &&
+					new Date(ad.expireDate) < now &&
+					ad?.status !== "deactive"
+				) {
+					ad.status = "deactive";
+					await ad.save();
+				}
+			})
+		);
 
-	res.status(200).json({
-		success: true,
-		count: ads.length,
-		data: ads,
-	});
+		res.status(200).json({
+			success: true,
+			count: ads.length,
+			data: ads,
+		});
+	} catch (err) {
+		console.error("🔥 Error in getAds:", err);
+		next(err);
+	}
 };
 
 // @desc    Get all ads (Admin only)
@@ -93,6 +98,9 @@ export const getAllAds = async (
 	res: Response,
 	next: NextFunction
 ) => {
+	if (!req.user || req.user.role !== "admin") {
+		return next(new ErrorResponse("Not authorized to access this route", 401));
+	}
 	try {
 		const {
 			page = "1",
@@ -138,17 +146,17 @@ export const getAllAds = async (
 			.limit(limitNum);
 
 		const now = new Date();
-await Promise.all(
-  ads.map(async (ad: IAd) => {
-    if (
-      ad.expireDate &&
-      new Date(ad.expireDate) < now &&
-      ad?.status !== "deactive"
-    ) {
-      await Ad.updateOne({ _id: ad._id }, { status: "deactive" });
-    }
-  })
-);
+		await Promise.all(
+			ads.map(async (ad: IAd) => {
+				if (
+					ad.expireDate &&
+					new Date(ad.expireDate) < now &&
+					ad?.status !== "deactive"
+				) {
+					await Ad.updateOne({ _id: ad._id }, { status: "deactive" });
+				}
+			})
+		);
 
 		res.status(200).json({
 			success: true,
@@ -170,21 +178,26 @@ export const getAd = async (
 	res: Response,
 	next: NextFunction
 ) => {
-	const ad = await Ad.findById(req.params.id).populate({
-		path: "createdByAdminId",
-		select: "name email",
-	});
+	try {
+		const ad = await Ad.findById(req.params.id).populate({
+			path: "createdByAdminId",
+			select: "name email",
+		});
 
-	if (!ad) {
-		return next(
-			new ErrorResponse(`Ad not found with id of ${req.params.id}`, 404)
-		);
+		if (!ad) {
+			return next(
+				new ErrorResponse(`Ad not found with id of ${req.params.id}`, 404)
+			);
+		}
+
+		res.status(200).json({
+			success: true,
+			data: ad,
+		});
+	} catch (err) {
+		console.error("🔥 Error in getAd:", err);
+		next(err);
 	}
-
-	res.status(200).json({
-		success: true,
-		data: ad,
-	});
 };
 
 // @desc    Update ad
@@ -199,33 +212,38 @@ export const updateAd = async (
 		return next(new ErrorResponse("Not authorized to access this route", 401));
 	}
 
-	let ad = await Ad.findById(req.params.id);
+	try {
+		let ad = await Ad.findById(req.params.id);
 
-	if (!ad) {
-		return next(
-			new ErrorResponse(`Ad not found with id of ${req.params.id}`, 404)
-		);
+		if (!ad) {
+			return next(
+				new ErrorResponse(`Ad not found with id of ${req.params.id}`, 404)
+			);
+		}
+
+		// Make sure user is ad owner
+		if (ad.createdByAdminId.toString() !== req.user._id.toString()) {
+			return next(
+				new ErrorResponse(
+					`User ${req.user._id} is not authorized to update this ad`,
+					401
+				)
+			);
+		}
+
+		ad = await Ad.findByIdAndUpdate(req.params.id, req.body, {
+			new: true,
+			runValidators: true,
+		});
+
+		res.status(200).json({
+			success: true,
+			data: ad,
+		});
+	} catch (err) {
+		console.error("🔥 Error in updateAd:", err);
+		next(err);
 	}
-
-	// Make sure user is ad owner
-	if (ad.createdByAdminId.toString() !== req.user._id.toString()) {
-		return next(
-			new ErrorResponse(
-				`User ${req.user._id} is not authorized to update this ad`,
-				401
-			)
-		);
-	}
-
-	ad = await Ad.findByIdAndUpdate(req.params.id, req.body, {
-		new: true,
-		runValidators: true,
-	});
-
-	res.status(200).json({
-		success: true,
-		data: ad,
-	});
 };
 
 // @desc    Delete ad
@@ -240,30 +258,35 @@ export const deleteAd = async (
 		return next(new ErrorResponse("Not authorized to access this route", 401));
 	}
 
-	const ad = await Ad.findById(req.params.id);
+	try {
+		const ad = await Ad.findById(req.params.id);
 
-	if (!ad) {
-		return next(
-			new ErrorResponse(`Ad not found with id of ${req.params.id}`, 404)
-		);
+		if (!ad) {
+			return next(
+				new ErrorResponse(`Ad not found with id of ${req.params.id}`, 404)
+			);
+		}
+
+		// Make sure user is ad owner
+		if (ad.createdByAdminId.toString() !== req.user._id.toString()) {
+			return next(
+				new ErrorResponse(
+					`User ${req.user._id} is not authorized to delete this ad`,
+					401
+				)
+			);
+		}
+
+		await ad.deleteOne();
+
+		res.status(200).json({
+			success: true,
+			data: {},
+		});
+	} catch (err) {
+		console.error("🔥 Error in deleteAd:", err);
+		next(err);
 	}
-
-	// Make sure user is ad owner
-	if (ad.createdByAdminId.toString() !== req.user._id.toString()) {
-		return next(
-			new ErrorResponse(
-				`User ${req.user._id} is not authorized to delete this ad`,
-				401
-			)
-		);
-	}
-
-	await ad.deleteOne();
-
-	res.status(200).json({
-		success: true,
-		data: {},
-	});
 };
 
 /**
