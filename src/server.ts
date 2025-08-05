@@ -48,7 +48,14 @@ app.use(express.json());
 
 
 app.use(cors({
-  origin: 'https://www.yallahbaggage.com',
+  origin: function (origin, callback) {
+    const allowedOrigins = ['https://www.yallahbaggage.com'];
+    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
